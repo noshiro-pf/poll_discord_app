@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "target": "es5",
-    "lib": ["esnext"],
     "module": "CommonJS",
     "moduleResolution": "node",
     "isolatedModules": true,
