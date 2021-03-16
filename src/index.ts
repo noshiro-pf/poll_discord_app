@@ -4,7 +4,7 @@ import { TOKEN } from './env';
 const client = new Client();
 
 const reply = (message: Message): void => {
-  if (message.content === '!ping') {
+  if (message.content === 'ping') {
     // send back "Pong." to the channel the message was sent in
     message.channel.send('Pong.').catch(console.error);
   }
