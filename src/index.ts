@@ -103,17 +103,18 @@ const reply = async (message: Message): Promise<void> => {
 };
 
 const onMessageReactCommon = async (
-  action: { type: 'add' | 'remove'; value: AnswerType },
+  action: { type: 'add' | 'remove'; value: AnswerType | undefined },
   reaction: MessageReaction,
   user: User | PartialUser
 ): Promise<void> => {
   if (user.bot) return;
+  if (action.value === undefined) return;
 
   const resultPoll = await updateVote(
     databaseRef,
     reaction.message.id as DateOptionId,
     user.id as UserId,
-    action
+    { type: action.type, value: action.value }
   );
 
   if (resultPoll === undefined) return;
@@ -142,7 +143,9 @@ const onMessageReactionAdd = async (
           ? 'ok'
           : emojis.ng.unicode === reaction.emoji.name
           ? 'ng'
-          : 'neither',
+          : emojis.neither.unicode === reaction.emoji.name
+          ? 'neither'
+          : undefined,
     },
     reaction,
     user
@@ -168,7 +171,9 @@ const onMessageReactionRemove = async (
           ? 'ok'
           : emojis.ng.unicode === reaction.emoji.name
           ? 'ng'
-          : 'neither',
+          : emojis.neither.unicode === reaction.emoji.name
+          ? 'neither'
+          : undefined,
     },
     reaction,
     user
