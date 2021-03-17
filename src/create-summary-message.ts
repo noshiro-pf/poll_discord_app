@@ -1,24 +1,20 @@
+import { mapNullable } from '@noshiro/ts-utils';
 import { MessageEmbed } from 'discord.js';
+import { thumbnailUrl } from './constants';
+import { createSummaryValue } from './cretate-summary-value';
+import { IPoll } from './types/poll';
 
-export const createSummaryMessage = (): MessageEmbed =>
+export const createSummaryMessage = (poll: IPoll): MessageEmbed =>
   new MessageEmbed()
     .setColor('#3e68b0')
-    .setTitle('Collected Results for 2020-03-15')
+    .setTitle(`Collected Results for ${poll.title}`)
+    .setThumbnail(thumbnailUrl)
     .addFields(
-      {
-        name: '22:00-22:30',
-        value:
-          ':o: :\t @aaa, @bbb, @ccc\n\t:question: :\t @aaa, @bbb, @ccc\n\t:x: :\t @aaa, @bbb',
-      },
-      {
-        name: '22:00-22:30',
-        value:
-          ':o: :\t @aaa, @bbb, @ccc\n\t:question: :\t @aaa, @bbb, @ccc\n\t:x: :\t @aaa, @bbb',
-      },
-      {
-        name: '22:00-22:30',
-        value:
-          ':o: :\t @aaa, @bbb, @ccc\n\t:question: :\t @aaa, @bbb, @ccc\n\t:x: :\t @aaa, @bbb',
-      }
+      poll.dateOptions
+        .map((d) => ({
+          name: d.label,
+          value: mapNullable(createSummaryValue)(poll.answers.get(d.id)) ?? '',
+        }))
+        .toArray()
     )
     .setTimestamp();

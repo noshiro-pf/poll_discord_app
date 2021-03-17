@@ -10,14 +10,18 @@
     "lint": "eslint src --ext .ts",
     "clean": "rimraf dist",
     "fmt": "prettier --ignore-path .prettierignore  --write .",
-    "setup": "echo 'no setup script'",
+    "setup": "echo '{ \"polls\": [] }' > ./db.json",
     "start": "node ./dist/index.js",
+    "start:dev": "export NODE_ENV='development' && node ./dist/index.js",
     "test": "echo 'no test script'",
     "heroku:bash": "heroku run bash -a poll-discord-app"
   },
   "dependencies": {
+    "@noshiro/ts-utils": "latest",
     "discord.js": "^12.5.1",
     "dotenv": "^8.2.0",
+    "fs": "^0.0.1-security",
+    "immutable": "^4.0.0-rc.12",
     "tslib": "^2.1.0"
   },
   "devDependencies": {
