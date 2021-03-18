@@ -3,7 +3,7 @@ import {
   pipeClass as pipe,
   recordEntries,
 } from '@noshiro/ts-utils';
-import { IList, IMap, IRecord } from '../immutable';
+import { IList, IMap, IRecord } from '../utils/immutable';
 import {
   fillAnswerOfDate,
   IAnswerOfDate,

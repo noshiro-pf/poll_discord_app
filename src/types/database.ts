@@ -3,7 +3,7 @@ import {
   pipeClass as pipe,
   recordEntries,
 } from '@noshiro/ts-utils';
-import { IMap, IRecord } from '../immutable';
+import { IMap, IRecord } from '../utils/immutable';
 import { fillIPoll, IPoll, PartialPollJs } from './poll';
 import { DateOptionId, PollId } from './types';
 

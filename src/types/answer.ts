@@ -1,4 +1,4 @@
-import { IRecord } from '../immutable';
+import { IRecord } from '../utils/immutable';
 import {
   createIAnswerOfDate,
   fillAnswerOfDate,

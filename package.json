@@ -18,11 +18,11 @@
   },
   "dependencies": {
     "@noshiro/ts-utils": "latest",
+    "@types/pg": "^7.14.11",
     "discord.js": "^12.5.1",
     "dotenv": "^8.2.0",
-    "fs": "^0.0.1-security",
     "immutable": "^4.0.0-rc.12",
-    "tslib": "^2.1.0"
+    "pg": "^8.5.1"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.14.1",
