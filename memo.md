@@ -100,3 +100,4 @@ links
 - https://node-postgres.com/
 - https://discordjs.guide/popular-topics/reactions.html#listening-for-reactions-on-old-messages
 - https://qiita.com/izmktr/items/60aa015915af0e293103
+- https://qiita.com/yu_eguchi/items/8cd53942b88b7ff2fecb
