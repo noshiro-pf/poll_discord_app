@@ -14,9 +14,7 @@ import { createIDatabase } from './types/database';
 import { DatabaseRef } from './types/types';
 
 const main = async (): Promise<Result<unknown, unknown>> => {
-  if (isDev) {
-    psql.setTlsRejectUnauthorized0();
-  }
+  psql.setTlsRejectUnauthorized0();
 
   const databaseRef: DatabaseRef = {
     db: createIDatabase(),
