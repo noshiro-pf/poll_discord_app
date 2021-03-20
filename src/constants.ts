@@ -1,6 +1,6 @@
 import { isDev } from './env';
 
-export const replyTriggerCommand = isDev ? '/devrp' : '/rp';
+export const replyTriggerCommand = isDev ? '/rpdev' : '/rp';
 
 export const emojis = {
   ok: { unicode: '⭕', name: ':o:' },
