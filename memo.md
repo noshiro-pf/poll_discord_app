@@ -47,9 +47,9 @@ $  sudo netstat -plunt | grep postgres
 ## sql メモ
 
 ```sql
-create table main ( data JSON , timestamp timestamp );
-insert into main ( data, timestamp, id ) values ( '{ "aaa": "bbb" }', current_timestamp, '2021-03-20 v2' );
-update main SET data = '{ "eee": "fff" }',  timestamp = current_timestamp where id = '2021-03-20';
+create table main ( data JSON , updated_at timestamp, id varchar(256) );
+insert into main ( data, updated_at, id ) values ( '{ "aaa": "bbb" }', current_timestamp, '2021-03-20 v2' );
+update main SET data = '{ "eee": "fff" }',  updated_at = current_timestamp where id = '2021-03-20';
 ```
 
 ```sh
@@ -59,6 +59,14 @@ heroku pg:info
 
 # npm config set strict-ssl=false
 ```
+
+## heroku
+
+```sh
+$  heroku run bash -a poll-discord-app
+
+```
+
 
 <!--
 
