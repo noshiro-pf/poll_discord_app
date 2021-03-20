@@ -55,7 +55,6 @@ update main SET data = '{ "eee": "fff" }',  updated_at = current_timestamp where
 ```sh
 export DATABASE_URL=postgres://$(whoami)
 
-heroku pg:info
 
 # npm config set strict-ssl=false
 ```
@@ -64,6 +63,9 @@ heroku pg:info
 
 ```sh
 $  heroku run bash -a poll-discord-app
+
+heroku pg:info -a poll-discord-app
+heroku pg:psql -a poll-discord-app
 
 ```
 
