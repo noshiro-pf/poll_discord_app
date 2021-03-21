@@ -38,19 +38,19 @@ export const initDiscordClient = (): Promise<Result<DiscordClient, unknown>> =>
     Promise.all([
       new Promise<Result<undefined, undefined>>((resolve) => {
         discordClient.once('ready', () => {
-          resolve(Result.ok(undefined));
+          discordClient.user
+            ?.setActivity({
+              name: replyTriggerCommand,
+              type: 'PLAYING',
+            })
+            .then(() => resolve(Result.ok(undefined)))
+            .catch(Result.err);
         });
       }),
-      new Promise<Result<undefined, undefined>>((resolve) => {
-        discordClient
-          .login(DISCORD_TOKEN)
-          .then(() => {
-            resolve(Result.ok(undefined));
-          })
-          .catch((err) => {
-            resolve(Result.err(err));
-          });
-      }),
+      discordClient
+        .login(DISCORD_TOKEN)
+        .then(() => Result.ok(undefined))
+        .catch(Result.err),
     ])
       .then(([ready, login]) =>
         Result.isErr(ready)
