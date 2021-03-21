@@ -1,8 +1,7 @@
-import { mapNullable } from '@noshiro/ts-utils';
 import { EmbedFieldData, MessageEmbed } from 'discord.js';
 import { footerText } from '../constants';
 import { IPoll } from '../types/poll';
-import { createSummaryValue } from './cretate-summary-value';
+import { createSummaryField } from './cretate-summary-value';
 
 export const createSummaryMessage = (poll: IPoll): MessageEmbed =>
   new MessageEmbed()
@@ -13,9 +12,4 @@ export const createSummaryMessage = (poll: IPoll): MessageEmbed =>
     .setTimestamp();
 
 export const createSummaryFields = (poll: IPoll): EmbedFieldData[] =>
-  poll.dateOptions
-    .map((d) => ({
-      name: d.label,
-      value: mapNullable(createSummaryValue)(poll.answers.get(d.id)) ?? '',
-    }))
-    .toArray();
+  poll.dateOptions.map((d) => createSummaryField(d, poll)).toArray();
