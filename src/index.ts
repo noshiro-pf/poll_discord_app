@@ -4,7 +4,7 @@ import {
   initDiscordClient,
   onMessageReactionAdd,
   onMessageReactionRemove,
-  reply,
+  sendPollMessage,
   startDiscordListener,
 } from './discord';
 import { DATABASE_URL, isDev } from './env';
@@ -76,7 +76,7 @@ const main = async (): Promise<Result<unknown, unknown>> => {
     databaseRef,
     onMessageReactionAdd,
     onMessageReactionRemove,
-    reply
+    sendPollMessage
   );
 
   return Result.ok(undefined);

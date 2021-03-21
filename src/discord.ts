@@ -1,9 +1,12 @@
 import { Result, tuple } from '@noshiro/ts-utils';
 import {
   Client as DiscordClient,
+  DMChannel,
   Message,
   MessageReaction,
+  NewsChannel,
   PartialUser,
+  TextChannel,
   User,
 } from 'discord.js';
 import { Client as PsqlClient } from 'pg';
@@ -82,46 +85,49 @@ export const startDiscordListener = (
   ) => Promise<Result<undefined, unknown>>
 ): void => {
   discordClient.on('messageReactionAdd', (reaction, user) => {
-    onMessageReactionAdd(databaseRef, psqlClient, reaction, user).catch(
-      console.error
-    );
+    onMessageReactionAdd(databaseRef, psqlClient, reaction, user)
+      .then((result) => {
+        if (Result.isErr(result)) {
+          console.error('on messageReactionAdd error:', result);
+        }
+      })
+      .catch(console.error);
   });
 
   discordClient.on('messageReactionRemove', (reaction, user) => {
-    onMessageReactionRemove(databaseRef, psqlClient, reaction, user).catch(
-      console.error
-    );
+    onMessageReactionRemove(databaseRef, psqlClient, reaction, user)
+      .then((result) => {
+        if (Result.isErr(result)) {
+          console.error('on messageReactionRemove error:', result);
+        }
+      })
+      .catch(console.error);
   });
 
   discordClient.on('message', (message) => {
-    reply(databaseRef, psqlClient, message).catch(console.error);
+    reply(databaseRef, psqlClient, message)
+      .then((result) => {
+        if (Result.isErr(result)) {
+          console.error('on message erorr:', result);
+        }
+      })
+      .catch(console.error);
   });
 };
 
-export const reply = async (
-  databaseRef: DatabaseRef,
-  psqlClient: PsqlClient,
-  message: Message
-): Promise<Result<undefined, unknown>> => {
-  if (message.partial) {
-    await message.fetch();
-  }
-
-  if (message.author.bot) return Result.ok(undefined);
-
-  if (!message.content.startsWith(`${replyTriggerCommand} `))
-    return Result.ok(undefined);
-
-  const [title, ...args] = parseCommandArgument(message.content);
-
-  if (title === undefined) return Result.ok(undefined);
-
-  await message.channel.send(createTitleString(title));
+const replySub = async (
+  messageChannel: TextChannel | DMChannel | NewsChannel,
+  title: string,
+  args: string[]
+): Promise<
+  Result<{ dateOptions: IList<IDateOption>; summaryMessage: Message }, unknown>
+> => {
+  await messageChannel.send(createTitleString(title));
 
   const dateOptionsTemp: IDateOption[] = [];
 
   for (const el of args) {
-    const result = await message.channel.send(el).catch((err) => {
+    const result = await messageChannel.send(el).catch((err) => {
       console.error(err);
       return undefined;
     });
@@ -151,13 +157,49 @@ export const reply = async (
     })
   );
 
-  const summaryMessageResult = await message.channel
+  // memo: "（編集済）" という文字列が表示されてずれるのが操作性を若干損ねるので、
+  // あえて一度メッセージを送った後再編集している
+  const summaryMessageInitResult = await messageChannel
     .send(summaryMessageEmbed)
     .then(Result.ok)
     .catch(Result.err);
 
-  if (Result.isErr(summaryMessageResult)) return summaryMessageResult;
-  const summaryMessage = summaryMessageResult.value;
+  if (Result.isErr(summaryMessageInitResult)) return summaryMessageInitResult;
+  const summaryMessageInit = summaryMessageInitResult.value;
+
+  const summaryMessageEditResult = await summaryMessageInit
+    .edit(summaryMessageEmbed)
+    .then(Result.ok)
+    .catch(Result.err);
+
+  if (Result.isErr(summaryMessageEditResult)) return summaryMessageEditResult;
+
+  const summaryMessage = summaryMessageEditResult.value;
+
+  return Result.ok({ dateOptions, summaryMessage: summaryMessage });
+};
+
+export const sendPollMessage = async (
+  databaseRef: DatabaseRef,
+  psqlClient: PsqlClient,
+  message: Message
+): Promise<Result<undefined, unknown>> => {
+  if (message.partial) {
+    await message.fetch();
+  }
+
+  if (message.author.bot) return Result.ok(undefined);
+
+  if (!message.content.startsWith(`${replyTriggerCommand} `))
+    return Result.ok(undefined);
+
+  const [title, ...args] = parseCommandArgument(message.content);
+
+  if (title === undefined) return Result.ok(undefined);
+
+  const replySubResult = await replySub(message.channel, title, args);
+  if (Result.isErr(replySubResult)) return replySubResult;
+  const { summaryMessage, dateOptions } = replySubResult.value;
 
   const res = await addPoll(
     databaseRef,
@@ -211,7 +253,7 @@ export const onMessageReactCommon = async (
     .find((m) => m.embeds.length > 0 && m.id === resultPoll.id)
     ?.edit(createSummaryMessage(resultPoll))
     .then(() => Result.ok(undefined))
-    .catch((err) => Result.err(err));
+    .catch(Result.err);
 
   return result ?? Result.err(`message with id ${resultPoll.id} not found`);
 };
