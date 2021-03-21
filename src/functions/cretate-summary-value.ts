@@ -54,5 +54,6 @@ export const createSummaryValueElement = (
 
 const toUserListString = (reactions: ISet<UserId>): string =>
   `\t(${reactions.size})\t${reactions
+    .sort()
     .map(userIdToMension)
     .join(', ')}`.trimEnd();
