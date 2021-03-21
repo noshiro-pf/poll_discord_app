@@ -14,24 +14,27 @@ export const createSummaryField = (
 ): EmbedFieldData => {
   const answerOfDate = poll.answers.get(dateOption.id);
   if (answerOfDate === undefined) {
-    return { name: dateOption.label, value: toUserListString(ISet()) };
+    return formatEmbedFieldData(dateOption.label, toUserListString(ISet()));
   }
   if (
     answerOfDate.ok.size + answerOfDate.neither.size + answerOfDate.ng.size ===
     0
   ) {
-    return { name: dateOption.label, value: toUserListString(ISet()) };
+    return formatEmbedFieldData(dateOption.label, toUserListString(ISet()));
   }
-  return createSummaryFieldFull(dateOption.label, answerOfDate);
+  return createSummaryFieldSub(dateOption.label, answerOfDate);
 };
 
-const createSummaryFieldFull = (
+const formatEmbedFieldData = (name: string, value: string): EmbedFieldData => ({
+  name: `**${name}**`,
+  value,
+});
+
+const createSummaryFieldSub = (
   name: string,
   answerOfDate: IAnswerOfDate
-): EmbedFieldData => ({
-  name,
-  value: createSummaryValue(answerOfDate),
-});
+): EmbedFieldData =>
+  formatEmbedFieldData(name, createSummaryValue(answerOfDate));
 
 export const createSummaryValue = (value: IAnswerOfDate): string =>
   [
