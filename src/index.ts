@@ -1,12 +1,6 @@
 import { Result } from '@noshiro/ts-utils';
 import { psqlRowId } from './constants';
-import {
-  initDiscordClient,
-  onMessageReactionAdd,
-  onMessageReactionRemove,
-  sendPollMessage,
-  startDiscordListener,
-} from './discord';
+import { initDiscordClient, startDiscordListener } from './discord';
 import { DATABASE_URL, isDev } from './env';
 import { initializeInMemoryDatabase } from './in-memory-database';
 import { psql } from './postgre-sql';
@@ -70,14 +64,7 @@ const main = async (): Promise<Result<unknown, unknown>> => {
   }
   console.log('In-Memory DB is ready');
 
-  startDiscordListener(
-    discordClient,
-    psqlClient,
-    databaseRef,
-    onMessageReactionAdd,
-    onMessageReactionRemove,
-    sendPollMessage
-  );
+  startDiscordListener(discordClient, psqlClient, databaseRef);
 
   return Result.ok(undefined);
 };

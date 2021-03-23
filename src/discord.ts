@@ -65,24 +65,7 @@ export const initDiscordClient = (): Promise<Result<DiscordClient, unknown>> =>
 export const startDiscordListener = (
   discordClient: DiscordClient,
   psqlClient: PsqlClient,
-  databaseRef: DatabaseRef,
-  onMessageReactionAdd: (
-    databaseRef: DatabaseRef,
-    psqlClient: PsqlClient,
-    reaction: MessageReaction,
-    user: User | PartialUser
-  ) => Promise<Result<undefined, unknown>>,
-  onMessageReactionRemove: (
-    databaseRef: DatabaseRef,
-    psqlClient: PsqlClient,
-    reaction: MessageReaction,
-    user: User | PartialUser
-  ) => Promise<Result<undefined, unknown>>,
-  reply: (
-    databaseRef: DatabaseRef,
-    psqlClient: PsqlClient,
-    message: Message
-  ) => Promise<Result<undefined, unknown>>
+  databaseRef: DatabaseRef
 ): void => {
   discordClient.on('messageReactionAdd', (reaction, user) => {
     onMessageReactionAdd(databaseRef, psqlClient, reaction, user)
@@ -105,7 +88,7 @@ export const startDiscordListener = (
   });
 
   discordClient.on('message', (message) => {
-    reply(databaseRef, psqlClient, message)
+    sendPollMessage(databaseRef, psqlClient, message)
       .then((result) => {
         if (Result.isErr(result)) {
           console.error('on message erorr:', result);

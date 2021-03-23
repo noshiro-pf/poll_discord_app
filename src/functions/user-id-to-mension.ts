@@ -1,3 +1,3 @@
 import { UserId } from '../types/types';
 
-export const userIdToMension = (userId: UserId): string => `<@${userId}>`;
+export const userIdToMension = (userId: UserId): string => `<@!${userId}>`;

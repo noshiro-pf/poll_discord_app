@@ -21,7 +21,7 @@ export namespace psql {
     const res = await psqlClient
       .connect()
       .then(() => Result.ok(undefined))
-      .catch((err) => Result.err(err));
+      .catch(Result.err);
 
     return Result.isOk(res) ? Result.ok(psqlClient) : Result.err(res.value);
   };
