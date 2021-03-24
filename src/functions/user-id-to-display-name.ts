@@ -1,7 +1,8 @@
-import { tuple } from '@noshiro/ts-utils';
+import { mapNullable, tuple } from '@noshiro/ts-utils';
 import { Guild, User, UserManager } from 'discord.js';
 import { UserId } from '../types/types';
 import { IMap, ISet } from '../utils/immutable';
+import { quoteIfSpaceIncluded } from './quote-if-space-included';
 
 export const createUserIdToDisplayNameMap = async ({
   userIds,
@@ -18,7 +19,11 @@ export const createUserIdToDisplayNameMap = async ({
 
   const displayNameList: readonly [UserId, string][] = await Promise.all(
     usersFull.map((u) =>
-      tuple(u.id as UserId, guild?.member(u)?.nickname ?? u.username)
+      tuple(
+        u.id as UserId,
+        mapNullable(quoteIfSpaceIncluded)(guild?.member(u)?.nickname) ??
+          u.username
+      )
     )
   );
 
