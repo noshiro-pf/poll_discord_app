@@ -14,7 +14,9 @@ import { emojis, replyTriggerCommand } from './constants';
 import { DISCORD_TOKEN } from './env';
 import { createSummaryMessage } from './functions/create-summary-message';
 import { createTitleString } from './functions/create-title-string';
+import { getUserIdsFromAnswers } from './functions/get-user-ids-from-answers';
 import { parseCommandArgument } from './functions/parse-command';
+import { createUserIdToDisplayNameMap } from './functions/user-id-to-display-name';
 import { addPoll, updateVote } from './in-memory-database';
 import { createIAnswerOfDate, IAnswerOfDate } from './types/answer-of-date';
 import { createIDateOption, IDateOption } from './types/date-option';
@@ -98,7 +100,7 @@ export const startDiscordListener = (
   });
 };
 
-const replySub = async (
+const sendPollMessageSub = async (
   messageChannel: TextChannel | DMChannel | NewsChannel,
   title: string,
   args: string[]
@@ -137,11 +139,10 @@ const replySub = async (
       answers: IMap<DateOptionId, IAnswerOfDate>(
         dateOptions.map((d) => tuple(d.id, createIAnswerOfDate()))
       ),
-    })
+    }),
+    IMap<UserId, string>()
   );
 
-  // memo: "（編集済）" という文字列が表示されてずれるのが操作性を若干損ねるので、
-  // あえて一度メッセージを送った後再編集している
   const summaryMessageInitResult = await messageChannel
     .send(summaryMessageEmbed)
     .then(Result.ok)
@@ -150,6 +151,8 @@ const replySub = async (
   if (Result.isErr(summaryMessageInitResult)) return summaryMessageInitResult;
   const summaryMessageInit = summaryMessageInitResult.value;
 
+  // memo: "（編集済）" という文字列が表示されてずれるのが操作性を若干損ねるので、
+  // あえて一度メッセージを送った後再編集している
   const summaryMessageEditResult = await summaryMessageInit
     .edit(summaryMessageEmbed)
     .then(Result.ok)
@@ -180,7 +183,7 @@ export const sendPollMessage = async (
 
   if (title === undefined) return Result.ok(undefined);
 
-  const replySubResult = await replySub(message.channel, title, args);
+  const replySubResult = await sendPollMessageSub(message.channel, title, args);
   if (Result.isErr(replySubResult)) return replySubResult;
   const { summaryMessage, dateOptions } = replySubResult.value;
 
@@ -232,9 +235,15 @@ export const onMessageReactCommon = async (
   const resultPoll = resultPollResult.value;
   if (!messages) return Result.err(`messages not found.`);
 
+  const userIdToDisplayName = await createUserIdToDisplayNameMap({
+    userIds: getUserIdsFromAnswers(resultPoll.answers),
+    userManager: reaction.message.client.users,
+    guild: reaction.message.guild ?? undefined,
+  });
+
   const result = await messages
     .find((m) => m.embeds.length > 0 && m.id === resultPoll.id)
-    ?.edit(createSummaryMessage(resultPoll))
+    ?.edit(createSummaryMessage(resultPoll, userIdToDisplayName))
     .then(() => Result.ok(undefined))
     .catch(Result.err);
 
