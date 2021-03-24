@@ -5,6 +5,7 @@ import {
   Message,
   MessageReaction,
   NewsChannel,
+  PartialMessage,
   PartialUser,
   TextChannel,
   User,
@@ -17,16 +18,18 @@ import { createTitleString } from './functions/create-title-string';
 import { getUserIdsFromAnswers } from './functions/get-user-ids-from-answers';
 import { parseCommandArgument } from './functions/parse-command';
 import { createUserIdToDisplayNameMap } from './functions/user-id-to-display-name';
-import { addPoll, updateVote } from './in-memory-database';
+import { addPoll, updatePoll, updateVote } from './in-memory-database';
 import { createIAnswerOfDate, IAnswerOfDate } from './types/answer-of-date';
 import { createIDateOption, IDateOption } from './types/date-option';
 import { createIPoll } from './types/poll';
 import {
   AnswerType,
+  CommandMessageId,
   DatabaseRef,
   DateOptionId,
   PollId,
   Timestamp,
+  TitleMessageId,
   UserId,
 } from './types/types';
 import { IList, IMap } from './utils/immutable';
@@ -89,6 +92,16 @@ export const startDiscordListener = (
       .catch(console.error);
   });
 
+  discordClient.on('messageUpdate', (_oldMessage, newMessage) => {
+    updatePollTitle(databaseRef, psqlClient, newMessage)
+      .then((result) => {
+        if (Result.isErr(result)) {
+          console.error('on message erorr:', result);
+        }
+      })
+      .catch(console.error);
+  });
+
   discordClient.on('message', (message) => {
     sendPollMessage(databaseRef, psqlClient, message)
       .then((result) => {
@@ -105,9 +118,17 @@ const sendPollMessageSub = async (
   title: string,
   args: string[]
 ): Promise<
-  Result<{ dateOptions: IList<IDateOption>; summaryMessage: Message }, unknown>
+  Result<
+    {
+      dateOptions: IList<IDateOption>;
+      summaryMessage: Message;
+      titleMessageId: TitleMessageId;
+    },
+    unknown
+  >
 > => {
-  await messageChannel.send(createTitleString(title));
+  const titleMessage = await messageChannel.send(createTitleString(title));
+  const titleMessageId = titleMessage.id as TitleMessageId;
 
   const dateOptionsTemp: IDateOption[] = [];
 
@@ -139,6 +160,7 @@ const sendPollMessageSub = async (
       answers: IMap<DateOptionId, IAnswerOfDate>(
         dateOptions.map((d) => tuple(d.id, createIAnswerOfDate()))
       ),
+      titleMessageId,
     }),
     IMap<UserId, string>()
   );
@@ -162,7 +184,11 @@ const sendPollMessageSub = async (
 
   const summaryMessage = summaryMessageEditResult.value;
 
-  return Result.ok({ dateOptions, summaryMessage: summaryMessage });
+  return Result.ok({
+    titleMessageId,
+    dateOptions,
+    summaryMessage,
+  });
 };
 
 export const sendPollMessage = async (
@@ -171,7 +197,7 @@ export const sendPollMessage = async (
   message: Message
 ): Promise<Result<undefined, unknown>> => {
   if (message.partial) {
-    await message.fetch();
+    message = await message.fetch();
   }
 
   if (message.author.bot) return Result.ok(undefined);
@@ -185,9 +211,9 @@ export const sendPollMessage = async (
 
   const replySubResult = await sendPollMessageSub(message.channel, title, args);
   if (Result.isErr(replySubResult)) return replySubResult;
-  const { summaryMessage, dateOptions } = replySubResult.value;
+  const { summaryMessage, dateOptions, titleMessageId } = replySubResult.value;
 
-  const res = await addPoll(
+  const addPollResult = await addPoll(
     databaseRef,
     psqlClient,
     createIPoll({
@@ -198,10 +224,78 @@ export const sendPollMessage = async (
       answers: IMap<DateOptionId, IAnswerOfDate>(
         dateOptions.map((d) => tuple(d.id, createIAnswerOfDate()))
       ),
-    })
+      titleMessageId,
+    }),
+    message.id as CommandMessageId
   );
 
-  return res;
+  return addPollResult;
+};
+
+export const updatePollTitle = async (
+  databaseRef: DatabaseRef,
+  psqlClient: PsqlClient,
+  message: Message | PartialMessage
+): Promise<Result<undefined, unknown>> => {
+  if (message.partial) {
+    message = await message.fetch();
+  }
+
+  if (message.author.bot) return Result.ok(undefined);
+
+  if (!message.content.startsWith(`${replyTriggerCommand} `))
+    return Result.ok(undefined);
+
+  const [title] = parseCommandArgument(message.content);
+
+  if (title === undefined) return Result.ok(undefined);
+
+  const pollId = databaseRef.db.commandMessageIdToPollIdMap.get(
+    message.id as CommandMessageId
+  );
+  if (pollId === undefined) return Result.ok(undefined);
+
+  const poll = databaseRef.db.polls.get(pollId);
+  if (poll === undefined) return Result.ok(undefined);
+
+  const [userIdToDisplayName, messages] = await Promise.all([
+    createUserIdToDisplayNameMap({
+      userIds: getUserIdsFromAnswers(poll.answers),
+      userManager: message.client.users,
+      guild: message.guild ?? undefined,
+    }),
+    message.channel.messages.fetch({
+      after: message.id,
+    }),
+  ]);
+
+  const newPoll = poll.set('title', title);
+
+  const [
+    updateSummaryMessageResult,
+    updateTitleMessageResult,
+    updatePollResult,
+  ] = await Promise.all([
+    messages
+      .find((m) => m.id === pollId)
+      ?.edit(createSummaryMessage(newPoll, userIdToDisplayName))
+      .then(() => Result.ok(undefined))
+      .catch(Result.err),
+    messages
+      .find((m) => m.id === poll.titleMessageId)
+      ?.edit(createTitleString(title))
+      .then(() => Result.ok(undefined))
+      .catch(Result.err),
+    updatePoll(databaseRef, psqlClient, newPoll),
+  ]);
+
+  if (updateSummaryMessageResult === undefined) return Result.ok(undefined);
+  if (Result.isErr(updateSummaryMessageResult))
+    return updateSummaryMessageResult;
+  if (updateTitleMessageResult === undefined) return Result.ok(undefined);
+  if (Result.isErr(updateTitleMessageResult)) return updateTitleMessageResult;
+
+  return updatePollResult;
 };
 
 export const onMessageReactCommon = async (
@@ -212,7 +306,7 @@ export const onMessageReactCommon = async (
   user: User | PartialUser
 ): Promise<Result<undefined, unknown>> => {
   if (reaction.partial) {
-    await reaction.fetch();
+    reaction = await reaction.fetch();
   }
 
   if (user.bot) return Result.ok(undefined);
@@ -233,7 +327,7 @@ export const onMessageReactCommon = async (
 
   if (Result.isErr(resultPollResult)) return resultPollResult;
   const resultPoll = resultPollResult.value;
-  if (!messages) return Result.err(`messages not found.`);
+  if (!messages) return Result.err('messages not found.');
 
   const userIdToDisplayName = await createUserIdToDisplayNameMap({
     userIds: getUserIdsFromAnswers(resultPoll.answers),
@@ -242,7 +336,7 @@ export const onMessageReactCommon = async (
   });
 
   const result = await messages
-    .find((m) => m.embeds.length > 0 && m.id === resultPoll.id)
+    .find((m) => m.id === resultPoll.id)
     ?.edit(createSummaryMessage(resultPoll, userIdToDisplayName))
     .then(() => Result.ok(undefined))
     .catch(Result.err);

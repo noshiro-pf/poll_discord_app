@@ -14,7 +14,7 @@ import {
   IDateOption,
   PartialDateOptionJs,
 } from './date-option';
-import { DateOptionId, PollId, Timestamp } from './types';
+import { DateOptionId, PollId, Timestamp, TitleMessageId } from './types';
 
 type PollBaseType = Readonly<{
   id: PollId;
@@ -22,6 +22,7 @@ type PollBaseType = Readonly<{
   updatedAt: Timestamp; // timestamp
   dateOptions: IList<IDateOption>; // used to find this Poll object from button message that represents date option
   answers: IMap<DateOptionId, IAnswerOfDate>;
+  titleMessageId: TitleMessageId;
 }>;
 
 export type PartialPollJs = Partial<
@@ -31,6 +32,7 @@ export type PartialPollJs = Partial<
     updatedAt: Timestamp;
     dateOptions: readonly PartialDateOptionJs[];
     answers: Record<DateOptionId, PartialAnswerOfDateJs>;
+    titleMessageId: TitleMessageId;
   }>
 >;
 
@@ -42,6 +44,7 @@ const IPollRecordFactory = IRecord<PollBaseType>({
   updatedAt: Date.now() as Timestamp,
   dateOptions: IList<IDateOption>(),
   answers: IMap<DateOptionId, IAnswerOfDate>(),
+  titleMessageId: '' as TitleMessageId,
 });
 
 export const createIPoll: (a?: PollBaseType) => IPoll = IPollRecordFactory;
@@ -65,4 +68,5 @@ export const fillIPoll = (p?: PartialPollJs): IPoll =>
             )
           )
         ).value ?? d.answers,
+    titleMessageId: p?.titleMessageId ?? d.titleMessageId,
   });

@@ -7,6 +7,7 @@ import { createIDatabase, fillDatabase, IDatabase } from './types/database';
 import { IPoll } from './types/poll';
 import {
   AnswerType,
+  CommandMessageId,
   DatabaseRef,
   DateOptionId,
   Timestamp,
@@ -16,7 +17,8 @@ import {
 export const addPoll = (
   ref: DatabaseRef,
   psqlClient: PsqlClient,
-  poll: IPoll
+  poll: IPoll,
+  messageId: CommandMessageId
 ): Promise<Result<undefined, unknown>> =>
   setDatabase(
     ref,
@@ -30,6 +32,20 @@ export const addPoll = (
           });
         })
       )
+      .update('commandMessageIdToPollIdMap', (map) =>
+        map.set(messageId, poll.id)
+      )
+  );
+
+export const updatePoll = (
+  ref: DatabaseRef,
+  psqlClient: PsqlClient,
+  poll: IPoll
+): Promise<Result<undefined, unknown>> =>
+  setDatabase(
+    ref,
+    psqlClient,
+    ref.db.update('polls', (polls) => polls.set(poll.id, poll))
   );
 
 export const updateVote = async (
@@ -112,9 +128,7 @@ export const initializeInMemoryDatabase = async (
   psqlClient: PsqlClient
 ): Promise<Result<undefined, unknown>> => {
   const res = await psql.getJsonData(psqlClient);
-  if (Result.isErr(res)) {
-    return Result.err(res);
-  }
+  if (Result.isErr(res)) return res;
   ref.db = databaseFromJson(res.value[psqlRowType.data]);
   return Result.ok(undefined);
 };

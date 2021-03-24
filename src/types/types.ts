@@ -4,6 +4,8 @@ import { IDatabase } from './database';
 
 export type PollId = Phantomic<string, 'poll-id'>;
 export type DateOptionId = Phantomic<string, 'date-option-id'>;
+export type CommandMessageId = Phantomic<string, 'command-message-id'>;
+export type TitleMessageId = Phantomic<string, 'title-message-id'>;
 export type UserId = Phantomic<string, 'user-id'>;
 export type Timestamp = Phantomic<number, 'timestamp'>;
 
