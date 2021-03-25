@@ -1,6 +1,7 @@
 import { Collection, GuildMember, Message } from 'discord.js';
 import { UserId } from '../types/types';
 import { IMap, ISet } from '../utils/immutable';
+import { quoteIfSpaceIncluded } from './quote-if-space-included';
 
 export const createUserIdToDisplayNameMap = async ({
   userIds,
@@ -24,7 +25,7 @@ export const createUserIdToDisplayNameMap = async ({
       }[]
     | undefined = guildMembers?.map((u) => ({
     userId: u.id as UserId,
-    displayName: u.displayName,
+    displayName: quoteIfSpaceIncluded(u.displayName),
   }));
 
   return IMap<UserId, string>(
