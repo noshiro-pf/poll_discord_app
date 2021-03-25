@@ -29,6 +29,7 @@ export const createSummaryField = (
       toUserListString(ISet(), userIdToDisplayName)
     );
   }
+
   return createSummaryFieldSub(
     dateOption.label,
     answerOfDate,

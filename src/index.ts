@@ -1,6 +1,6 @@
 import { Result } from '@noshiro/ts-utils';
 import { psqlRowId } from './constants';
-import { initDiscordClient, startDiscordListener } from './discord';
+import { initDiscordClient, startDiscordListener } from './discord/discord';
 import { DATABASE_URL, isDev } from './env';
 import { initializeInMemoryDatabase } from './in-memory-database';
 import { psql } from './postgre-sql';
