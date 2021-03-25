@@ -1,5 +1,4 @@
-import { mapNullable, tuple } from '@noshiro/ts-utils';
-import { Guild, User, UserManager } from 'discord.js';
+import { Guild, GuildMember, User, UserManager } from 'discord.js';
 import { UserId } from '../types/types';
 import { IMap, ISet } from '../utils/immutable';
 import { quoteIfSpaceIncluded } from './quote-if-space-included';
@@ -13,19 +12,36 @@ export const createUserIdToDisplayNameMap = async ({
   userManager: UserManager;
   guild: Guild | undefined;
 }): Promise<IMap<UserId, string>> => {
-  const usersFull: readonly User[] = await Promise.all(
-    userIds.map((id) => userManager.fetch(id)).toArray()
+  const displayNameList: readonly {
+    userId: UserId;
+    displayName: string;
+  }[] = await Promise.all(
+    userIds
+      .map((userId) => userIdToDisplayName({ userId, userManager, guild }))
+      .toArray()
   );
 
-  const displayNameList: readonly [UserId, string][] = await Promise.all(
-    usersFull.map((u) =>
-      tuple(
-        u.id as UserId,
-        mapNullable(quoteIfSpaceIncluded)(guild?.member(u)?.nickname) ??
-          u.username
-      )
-    )
+  return IMap<UserId, string>(
+    displayNameList.map(({ userId, displayName }) => [userId, displayName])
   );
+};
 
-  return IMap<UserId, string>(displayNameList);
+const userIdToDisplayName = async ({
+  userId,
+  userManager,
+  guild,
+}: {
+  userId: UserId;
+  userManager: UserManager;
+  guild: Guild | undefined;
+}): Promise<{ userId: UserId; displayName: string }> => {
+  const user: User = await userManager.fetch(userId);
+  const guildMember: GuildMember | undefined = await (guild
+    ?.member(user)
+    ?.fetch() ?? Promise.resolve(undefined));
+
+  const displayName = quoteIfSpaceIncluded(
+    guildMember?.nickname ?? user.username
+  );
+  return { userId, displayName };
 };
