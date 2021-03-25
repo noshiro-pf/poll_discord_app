@@ -40,9 +40,8 @@ const userIdToDisplayName = async ({
     ?.fetch()
     .then((g) => g.member(user)?.fetch(true)) ?? Promise.resolve(undefined));
 
-  console.log(guild, guildMember);
   const displayName = quoteIfSpaceIncluded(
-    guildMember?.nickname ?? user.username
+    guildMember?.displayName ?? user.username
   );
   return { userId, displayName };
 };
