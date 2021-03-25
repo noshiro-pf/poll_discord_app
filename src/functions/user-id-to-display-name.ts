@@ -37,9 +37,10 @@ const userIdToDisplayName = async ({
 }): Promise<{ userId: UserId; displayName: string }> => {
   const user: User = await userManager.fetch(userId);
   const guildMember: GuildMember | undefined = await (guild
-    ?.member(user)
-    ?.fetch() ?? Promise.resolve(undefined));
+    ?.fetch()
+    .then((g) => g.member(user)?.fetch(true)) ?? Promise.resolve(undefined));
 
+  console.log(guild, guildMember);
   const displayName = quoteIfSpaceIncluded(
     guildMember?.nickname ?? user.username
   );
