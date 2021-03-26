@@ -28,6 +28,7 @@ const sendPollMessageSub = async (
   Result<
     {
       dateOptions: IList<IDateOption>;
+      dateOptionMessageList: IList<Message>;
       summaryMessage: Message;
       titleMessageId: TitleMessageId;
     },
@@ -37,26 +38,27 @@ const sendPollMessageSub = async (
   const titleMessage = await messageChannel.send(createTitleString(title));
   const titleMessageId = titleMessage.id as TitleMessageId;
 
-  const dateOptionsTemp: IDateOption[] = [];
+  const dateOptionAndMessageListTemp: [IDateOption, Message][] = [];
 
   for (const el of args) {
-    const result = await messageChannel.send(el).catch((err) => {
-      console.error(err);
-      return undefined;
-    });
-    if (result === undefined) continue;
-    await result.react(emojis.ok.unicode);
-    await result.react(emojis.neither.unicode);
-    await result.react(emojis.ng.unicode);
-    dateOptionsTemp.push(
+    const result = await messageChannel
+      .send(el)
+      .then(Result.ok)
+      .catch(Result.err);
+    if (Result.isErr(result)) return result;
+    dateOptionAndMessageListTemp.push([
       createIDateOption({
         label: el,
-        id: result.id as DateOptionId,
-      })
-    );
+        id: result.value.id as DateOptionId,
+      }),
+      result.value,
+    ]);
   }
 
-  const dateOptions = IList(dateOptionsTemp);
+  const dateOptionMessageList = IList(
+    dateOptionAndMessageListTemp.map(([, a]) => a)
+  );
+  const dateOptions = IList(dateOptionAndMessageListTemp.map(([a]) => a));
 
   const summaryMessageEmbed = createSummaryMessage(
     createIPoll({
@@ -94,6 +96,7 @@ const sendPollMessageSub = async (
   return Result.ok({
     titleMessageId,
     dateOptions,
+    dateOptionMessageList,
     summaryMessage,
   });
 };
@@ -118,7 +121,12 @@ export const sendPollMessage = async (
 
   const replySubResult = await sendPollMessageSub(message.channel, title, args);
   if (Result.isErr(replySubResult)) return replySubResult;
-  const { summaryMessage, dateOptions, titleMessageId } = replySubResult.value;
+  const {
+    summaryMessage,
+    dateOptions,
+    dateOptionMessageList,
+    titleMessageId,
+  } = replySubResult.value;
 
   const addPollResult = await addPoll(
     databaseRef,
@@ -134,6 +142,16 @@ export const sendPollMessage = async (
       titleMessageId,
     }),
     message.id as CommandMessageId
+  );
+
+  await Promise.all(
+    dateOptionMessageList
+      .map(async (message) => {
+        await message.react(emojis.ok.unicode);
+        await message.react(emojis.neither.unicode);
+        await message.react(emojis.ng.unicode);
+      })
+      .toArray()
   );
 
   return addPollResult;
