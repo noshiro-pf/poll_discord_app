@@ -1,4 +1,4 @@
-import { Result, tuple } from '@noshiro/ts-utils';
+import { promiseToResult, Result, tuple } from '@noshiro/ts-utils';
 import { DMChannel, Message, NewsChannel, TextChannel } from 'discord.js';
 import { Client as PsqlClient } from 'pg';
 import { emojis, replyTriggerCommand } from '../constants';
@@ -41,10 +41,8 @@ const sendPollMessageSub = async (
   const dateOptionAndMessageListTemp: [IDateOption, Message][] = [];
 
   for (const el of args) {
-    const result = await messageChannel
-      .send(el)
-      .then(Result.ok)
-      .catch(Result.err);
+    const result = await promiseToResult(messageChannel.send(el));
+
     if (Result.isErr(result)) return result;
     dateOptionAndMessageListTemp.push([
       createIDateOption({
@@ -74,20 +72,18 @@ const sendPollMessageSub = async (
     IMap<UserId, string>()
   );
 
-  const summaryMessageInitResult = await messageChannel
-    .send(summaryMessageEmbed)
-    .then(Result.ok)
-    .catch(Result.err);
+  const summaryMessageInitResult = await promiseToResult(
+    messageChannel.send(summaryMessageEmbed)
+  );
 
   if (Result.isErr(summaryMessageInitResult)) return summaryMessageInitResult;
   const summaryMessageInit = summaryMessageInitResult.value;
 
   // memo: "（編集済）" という文字列が表示されてずれるのが操作性を若干損ねるので、
   // あえて一度メッセージを送った後再編集している
-  const summaryMessageEditResult = await summaryMessageInit
-    .edit(summaryMessageEmbed)
-    .then(Result.ok)
-    .catch(Result.err);
+  const summaryMessageEditResult = await promiseToResult(
+    summaryMessageInit.edit(summaryMessageEmbed)
+  );
 
   if (Result.isErr(summaryMessageEditResult)) return summaryMessageEditResult;
 
@@ -118,6 +114,7 @@ export const sendPollMessage = async (
   const [title, ...args] = parseCommandArgument(message.content);
 
   if (title === undefined) return Result.ok(undefined);
+  if (args.length === 0) return Result.ok(undefined);
 
   const replySubResult = await sendPollMessageSub(message.channel, title, args);
   if (Result.isErr(replySubResult)) return replySubResult;

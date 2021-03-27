@@ -1,4 +1,4 @@
-import { Result } from '@noshiro/ts-utils';
+import { promiseToResult, Result } from '@noshiro/ts-utils';
 import { Message, PartialMessage } from 'discord.js';
 import { Client as PsqlClient } from 'pg';
 import { replyTriggerCommand } from '../constants';
@@ -53,16 +53,17 @@ export const updatePollTitle = async (
     updateTitleMessageResult,
     updatePollResult,
   ] = await Promise.all([
-    messages
-      .find((m) => m.id === pollId)
-      ?.edit(createSummaryMessage(newPoll, userIdToDisplayName))
-      .then(() => Result.ok(undefined))
-      .catch(Result.err),
-    messages
-      .find((m) => m.id === poll.titleMessageId)
-      ?.edit(createTitleString(title))
-      .then(() => Result.ok(undefined))
-      .catch(Result.err),
+    promiseToResult(
+      messages
+        .find((m) => m.id === pollId)
+        ?.edit(createSummaryMessage(newPoll, userIdToDisplayName)) ??
+        Promise.resolve(undefined)
+    ),
+    promiseToResult(
+      messages
+        .find((m) => m.id === poll.titleMessageId)
+        ?.edit(createTitleString(title)) ?? Promise.resolve(undefined)
+    ),
     updatePoll(databaseRef, psqlClient, newPoll),
   ]);
 

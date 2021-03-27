@@ -1,4 +1,4 @@
-import { JsonType, Result } from '@noshiro/ts-utils';
+import { JsonType, promiseToResult, Result } from '@noshiro/ts-utils';
 import { Client as PsqlClient } from 'pg';
 import { psqlRowId, psqlRowType, psqlTableName } from './constants';
 import { createIDatabase } from './types/database';
@@ -18,10 +18,7 @@ export namespace psql {
       ssl: true,
     });
 
-    const res = await psqlClient
-      .connect()
-      .then(() => Result.ok(undefined))
-      .catch(Result.err);
+    const res = await promiseToResult(psqlClient.connect());
 
     return Result.isOk(res) ? Result.ok(psqlClient) : Result.err(res.value);
   };
@@ -101,15 +98,5 @@ export namespace psql {
 
   export const closeConnection = async (
     psqlClient: PsqlClient
-  ): Promise<Result<undefined, unknown>> =>
-    new Promise((resolve) => {
-      psqlClient
-        .end()
-        .then(() => {
-          resolve(Result.ok(undefined));
-        })
-        .catch((err) => {
-          resolve(Result.err(err));
-        });
-    });
+  ): Promise<Result<void, unknown>> => promiseToResult(psqlClient.end());
 }

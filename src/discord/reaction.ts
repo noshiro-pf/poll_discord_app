@@ -1,4 +1,4 @@
-import { Result } from '@noshiro/ts-utils';
+import { promiseToResult, Result } from '@noshiro/ts-utils';
 import { MessageReaction, PartialUser, User } from 'discord.js';
 import { Client as PsqlClient } from 'pg';
 import { emojis } from '../constants';
@@ -44,13 +44,15 @@ export const onMessageReactCommon = async (
     message: reaction.message,
   });
 
-  const result = await messages
-    .find((m) => m.id === resultPoll.id)
-    ?.edit(createSummaryMessage(resultPoll, userIdToDisplayName))
-    .then(() => Result.ok(undefined))
-    .catch(Result.err);
+  const result = await promiseToResult(
+    messages
+      .find((m) => m.id === resultPoll.id)
+      ?.edit(createSummaryMessage(resultPoll, userIdToDisplayName))
+      .then(() => undefined) ??
+      Promise.reject(Result.err(`message with id ${resultPoll.id} not found`))
+  );
 
-  return result ?? Result.err(`message with id ${resultPoll.id} not found`);
+  return result;
 };
 
 const mapReactionEmojiNameToAnswerType = (

@@ -73,10 +73,10 @@
     "@nodelib/fs.scandir" "2.1.4"
     fastq "^1.6.0"
 
-"@noshiro/ts-utils@latest":
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/@noshiro/ts-utils/-/ts-utils-1.0.2.tgz#ab96eb85a94024af3a050d4e266da2f7b106fee0"
-  integrity sha512-kItJwqvtyV+6q+ljO4bWaycML++nCgOFVRBhZd0AfjasrlHvl+V/LEPn++NqorRx3aU/0S0eo5vXA8g8Rm6kBw==
+"@noshiro/ts-utils@^1.0.5":
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/@noshiro/ts-utils/-/ts-utils-1.0.5.tgz#83309bc9e2c92e4b8eb2fa055838c72a387b788d"
+  integrity sha512-tjaMZpF/ASxx1XhcfsCpgifxPE9hm+K3OqQZz3+NpO8giTHWQdNW/K3es6pWFUTJbcIDcjC0ElNQJXr3FO2PyQ==
 
 "@types/glob@^7.1.1":
   version "7.1.3"

@@ -1,4 +1,4 @@
-import { Result } from '@noshiro/ts-utils';
+import { promiseToResult, Result } from '@noshiro/ts-utils';
 import { Client as DiscordClient } from 'discord.js';
 import { Client as PsqlClient } from 'pg';
 import { replyTriggerCommand } from '../constants';
@@ -23,13 +23,10 @@ export const initDiscordClient = (): Promise<Result<DiscordClient, unknown>> =>
               type: 'PLAYING',
             })
             .then(() => resolve(Result.ok(undefined)))
-            .catch(Result.err);
+            .catch((err) => resolve(Result.err(err)));
         });
       }),
-      discordClient
-        .login(DISCORD_TOKEN)
-        .then(() => Result.ok(undefined))
-        .catch(Result.err),
+      promiseToResult(discordClient.login(DISCORD_TOKEN)),
     ])
       .then(([ready, login]) =>
         Result.isErr(ready)
