@@ -2,3 +2,5 @@
 node_modules
 dist
 db.json
+eslintrc/**/.*.js
+eslintrc/**/*.js

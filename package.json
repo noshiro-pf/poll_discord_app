@@ -10,7 +10,9 @@
     "lint": "eslint src --ext .ts",
     "clean": "rimraf dist",
     "fmt": "prettier --ignore-path .prettierignore  --write .",
-    "setup": "echo '{ \"polls\": [] }' > ./db.json",
+    "setup": "yarn setup:dbjson && yarn setup:eslintrc",
+    "setup:eslintrc": "tsc -p ./eslintrc/tsconfig.eslintrc.json",
+    "setup:dbjson": "echo '{ \"polls\": [] }' > ./db.json",
     "start": "node ./dist/index.js",
     "start:dev": "export NODE_ENV='development' && node ./dist/index.js",
     "test": "echo 'no test script'",
@@ -24,16 +26,18 @@
     "tslib": "^2.1.0"
   },
   "devDependencies": {
+    "@types/eslint": "^7.28.0",
     "@types/pg": "^7.14.11",
-    "@typescript-eslint/eslint-plugin": "^4.14.1",
-    "@typescript-eslint/parser": "^4.14.1",
-    "eslint": "^7.18.0",
-    "eslint-config-prettier": "^7.2.0",
-    "eslint-plugin-prettier": "^3.3.1",
-    "prettier": "^2.0.5",
-    "prettier-plugin-organize-imports": "^1.1.1",
-    "prettier-plugin-packagejson": "^2.2.9",
-    "typescript": "4.3.5"
+    "@typescript-eslint/eslint-plugin": "^4.26.0",
+    "@typescript-eslint/parser": "^4.26.0",
+    "eslint": "^7.25.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-noshiro-custom": "1.0.1",
+    "prettier": "^2.3.2",
+    "prettier-plugin-organize-imports": "^2.1.0",
+    "prettier-plugin-packagejson": "^2.2.10",
+    "typescript": "^4.3.2"
   },
   "engines": {
     "node": ">=12.x.x"
