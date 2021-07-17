@@ -8,6 +8,7 @@
     "build": "tsc",
     "buildw": "tsc --watch",
     "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint --fix src --ext .ts",
     "clean": "rimraf dist",
     "fmt": "prettier --ignore-path .prettierignore  --write .",
     "setup": "yarn setup:dbjson && yarn setup:eslintrc",
