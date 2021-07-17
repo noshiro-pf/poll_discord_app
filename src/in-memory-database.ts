@@ -1,60 +1,76 @@
-import { Result } from '@noshiro/ts-utils';
-import { Client as PsqlClient } from 'pg';
+import { IRecord, pipe, Result } from '@noshiro/ts-utils';
+import type { Client as PsqlClient } from 'pg';
 import { psqlRowType } from './constants';
 import { psql } from './postgre-sql';
-import { IAnswerOfDate } from './types/answer-of-date';
-import { createIDatabase, fillDatabase, IDatabase } from './types/database';
-import { IPoll } from './types/poll';
+import type { AnswerOfDate } from './types/answer-of-date';
+import type { Database } from './types/database';
 import {
+  databaseToJson,
+  defaultDatabase,
+  fillDatabase,
+} from './types/database';
+import type { Poll } from './types/poll';
+import type {
   AnswerType,
   CommandMessageId,
   DatabaseRef,
   DateOptionId,
-  Timestamp,
   UserId,
 } from './types/types';
+import { createTimestamp } from './types/types';
 
 export const addPoll = (
   ref: DatabaseRef,
+  // eslint-disable-next-line noshiro-custom/prefer-readonly-parameter-types
   psqlClient: PsqlClient,
-  poll: IPoll,
+  poll: Poll,
   messageId: CommandMessageId
 ): Promise<Result<undefined, unknown>> =>
   setDatabase(
     ref,
     psqlClient,
-    ref.db
-      .update('polls', (polls) => polls.set(poll.id, poll))
-      .update('dateToPollIdMap', (dateToPollIdMap) =>
-        dateToPollIdMap.withMutations((draft) => {
-          poll.dateOptions.forEach((d) => {
-            draft.set(d.id, poll.id);
-          });
-        })
+    pipe(ref.db)
+      .chain((db) =>
+        IRecord.update(db, 'polls', (polls) => polls.set(poll.id, poll))
       )
-      .update('commandMessageIdToPollIdMap', (map) =>
-        map.set(messageId, poll.id)
+      .chain((db) =>
+        IRecord.update(db, 'dateToPollIdMap', (dateToPollIdMap) =>
+          dateToPollIdMap.withMutations(
+            poll.dateOptions.map((d) => ({
+              type: 'set',
+              key: d.id,
+              value: poll.id,
+            }))
+          )
+        )
       )
+      .chain((db) =>
+        IRecord.update(db, 'commandMessageIdToPollIdMap', (map) =>
+          map.set(messageId, poll.id)
+        )
+      ).value
   );
 
 export const updatePoll = (
   ref: DatabaseRef,
+  // eslint-disable-next-line noshiro-custom/prefer-readonly-parameter-types
   psqlClient: PsqlClient,
-  poll: IPoll
+  poll: Poll
 ): Promise<Result<undefined, unknown>> =>
   setDatabase(
     ref,
     psqlClient,
-    ref.db.update('polls', (polls) => polls.set(poll.id, poll))
+    IRecord.update(ref.db, 'polls', (polls) => polls.set(poll.id, poll))
   );
 
 export const updateVote = async (
   ref: DatabaseRef,
+  // eslint-disable-next-line noshiro-custom/prefer-readonly-parameter-types
   psqlClient: PsqlClient,
   dateOptionId: DateOptionId,
   userId: UserId,
-  action: { type: 'add' | 'remove'; value: AnswerType }
-): Promise<Result<IPoll, unknown>> => {
+  action: Readonly<{ type: 'add' | 'remove'; value: AnswerType }>
+): Promise<Result<Poll, unknown>> => {
   const pollId = ref.db.dateToPollIdMap.get(dateOptionId);
   if (pollId === undefined)
     return Result.err(`pollId for "${dateOptionId}" not found.`);
@@ -63,31 +79,32 @@ export const updateVote = async (
   if (curr === undefined)
     return Result.err(`poll with id ${pollId} not found.`);
 
-  const next = curr
-    .set('updatedAt', Date.now() as Timestamp)
-    .update('answers', (answers) =>
-      answers.update(
-        dateOptionId,
-        (answerOfDate): IAnswerOfDate => {
+  const next = pipe(curr)
+    .chain((poll) =>
+      IRecord.set(poll, 'updatedAt', createTimestamp(Date.now()))
+    )
+    .chain((poll) =>
+      IRecord.update(poll, 'answers', (answers) =>
+        answers.update(dateOptionId, (answerOfDate): AnswerOfDate => {
           switch (action.type) {
             case 'add':
-              return answerOfDate.update(action.value, (set) =>
+              return IRecord.update(answerOfDate, action.value, (set) =>
                 set.add(userId)
               );
             case 'remove': {
-              return answerOfDate.update(action.value, (set) =>
-                set.remove(userId)
+              return IRecord.update(answerOfDate, action.value, (set) =>
+                set.delete(userId)
               );
             }
           }
-        }
+        })
       )
-    );
+    ).value;
 
   const res = await setDatabase(
     ref,
     psqlClient,
-    ref.db.update('polls', (polls) => polls.set(pollId, next))
+    IRecord.update(ref.db, 'polls', (polls) => polls.set(pollId, next))
   );
   if (Result.isErr(res)) {
     return Result.err(`setDatabase failed. ${JSON.stringify(res.value)}`);
@@ -98,33 +115,35 @@ export const updateVote = async (
 // const readFileAsync = util.promisify(fs.readFile);
 // const writeFileAsync = util.promisify(fs.writeFile);
 
-// const readDatabaseFromJsonFile = async (): Promise<IDatabase> => {
+// const readDatabaseFromJsonFile = async (): Promise<Database> => {
 //   const res = await readFileAsync(paths.dbJson, { encoding: 'utf-8' });
 //   return databaseFromJson(JSON.parse(res));
 // };
 
-// export const writeDatabaseToJsonFile = (database: IDatabase): Promise<void> =>
+// export const writeDatabaseToJsonFile = (database: Database): Promise<void> =>
 //   writeFileAsync(
 //     paths.dbJson,
 //     JSON.stringify(database.toJS(), undefined, isDev ? '  ' : undefined)
 //   );
 
-const databaseFromJson = (dbJson: unknown): IDatabase =>
+const databaseFromJson = (dbJson: unknown): Database =>
   typeof dbJson !== 'object' || dbJson === null
-    ? createIDatabase()
+    ? defaultDatabase
     : fillDatabase(dbJson);
 
 const setDatabase = (
   ref: DatabaseRef,
+  // eslint-disable-next-line noshiro-custom/prefer-readonly-parameter-types
   psqlClient: PsqlClient,
-  next: IDatabase
+  next: Database
 ): Promise<Result<undefined, unknown>> => {
   ref.db = next;
-  return psql.setJsonData(psqlClient, next.toJS());
+  return psql.setJsonData(psqlClient, databaseToJson(next));
 };
 
 export const initializeInMemoryDatabase = async (
   ref: DatabaseRef,
+  // eslint-disable-next-line noshiro-custom/prefer-readonly-parameter-types
   psqlClient: PsqlClient
 ): Promise<Result<undefined, unknown>> => {
   const res = await psql.getJsonData(psqlClient);

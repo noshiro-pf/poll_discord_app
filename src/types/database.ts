@@ -1,57 +1,105 @@
+import type { DeepReadonly, JsonType, TypeExtends } from '@noshiro/ts-utils';
 import {
+  assertType,
+  IMap,
+  isNotUndefined,
+  ituple,
   mapNullable,
-  pipeClass as pipe,
+  pipe,
   recordEntries,
+  recordFromEntries,
 } from '@noshiro/ts-utils';
-import { IMap, IRecord } from '../utils/immutable';
-import { fillIPoll, IPoll, PartialPollJs } from './poll';
-import { CommandMessageId, DateOptionId, PollId } from './types';
+import type { PartialPollJson, Poll, PollJson } from './poll';
+import { fillPoll } from './poll';
+import type { CommandMessageId, DateOptionId, PollId } from './types';
+import {
+  createCommandMessageId,
+  createDateOptionId,
+  createPollId,
+} from './types';
 
-type DatabaseBaseType = Readonly<{
-  polls: IMap<PollId, IPoll>;
+export type Database = Readonly<{
+  polls: IMap<PollId, Poll>;
   dateToPollIdMap: IMap<DateOptionId, PollId>;
   commandMessageIdToPollIdMap: IMap<CommandMessageId, PollId>;
 }>;
 
-export type PartialDatabaseJs = Partial<
+export type DatabaseJson = DeepReadonly<{
+  polls: Record<string, PollJson>;
+  dateToPollIdMap: Record<string, PollId>;
+  commandMessageIdToPollIdMap: Record<string, PollId>;
+}>;
+
+assertType<TypeExtends<DatabaseJson, JsonType>>();
+
+export type PartialDatabaseJson = Partial<
   Readonly<{
-    polls: Record<PollId, PartialPollJs>;
-    dateToPollIdMap: Partial<Record<DateOptionId, PollId>>;
-    commandMessageIdToPollIdMap: Partial<Record<CommandMessageId, PollId>>;
+    polls: Record<string, PartialPollJson>;
+    dateToPollIdMap: Partial<Record<string, PollId>>;
+    commandMessageIdToPollIdMap: Partial<Record<string, PollId>>;
   }>
 >;
 
-export type IDatabase = IRecord<DatabaseBaseType> & Readonly<DatabaseBaseType>;
+export const defaultDatabase: Database = {
+  polls: IMap.new<PollId, Poll>([]),
+  dateToPollIdMap: IMap.new<DateOptionId, PollId>([]),
+  commandMessageIdToPollIdMap: IMap.new<CommandMessageId, PollId>([]),
+} as const;
 
-const IDatabaseRecordFactory = IRecord<DatabaseBaseType>({
-  polls: IMap<PollId, IPoll>(),
-  dateToPollIdMap: IMap<DateOptionId, PollId>(),
-  commandMessageIdToPollIdMap: IMap<CommandMessageId, PollId>(),
+const d = defaultDatabase;
+export const fillDatabase = (p?: PartialDatabaseJson): Database => ({
+  polls:
+    pipe(p?.polls)
+      .chain((polls) => mapNullable(polls, recordEntries))
+      .chain((entries) =>
+        mapNullable(entries, (e) =>
+          IMap.new<PollId, Poll>(
+            e.map(([k, v]) => [createPollId(k), fillPoll(v)])
+          )
+        )
+      ).value ?? d.polls,
+  dateToPollIdMap:
+    pipe(p?.dateToPollIdMap)
+      .chain((a) => mapNullable(a, recordEntries))
+      .chain((a) =>
+        mapNullable(a, (entries) =>
+          entries
+            .filter(
+              (
+                entry
+              ): entry is [typeof entry[0], NonNullable<typeof entry[1]>] =>
+                isNotUndefined(entry[1])
+            )
+            .map(([k, v]) => ituple(createDateOptionId(k), v))
+        )
+      )
+      .chain((a) =>
+        mapNullable(a, (entries) => IMap.new<DateOptionId, PollId>(entries))
+      ).value ?? d.dateToPollIdMap,
+  commandMessageIdToPollIdMap:
+    pipe(p?.commandMessageIdToPollIdMap)
+      .chain((a) => mapNullable(a, recordEntries))
+      .chain((a) =>
+        mapNullable(a, (entries) =>
+          entries
+            .filter(
+              (
+                entry
+              ): entry is [typeof entry[0], NonNullable<typeof entry[1]>] =>
+                isNotUndefined(entry[1])
+            )
+            .map(([k, v]) => ituple(createCommandMessageId(k), v))
+        )
+      )
+      .chain((a) =>
+        mapNullable(a, (entries) => IMap.new<CommandMessageId, PollId>(entries))
+      ).value ?? d.commandMessageIdToPollIdMap,
 });
 
-export const createIDatabase: (
-  a?: DatabaseBaseType
-) => IDatabase = IDatabaseRecordFactory;
-
-const d = IDatabaseRecordFactory();
-export const fillDatabase = (p?: PartialDatabaseJs): IDatabase =>
-  createIDatabase({
-    polls:
-      pipe(p?.polls)
-        .map(mapNullable(recordEntries))
-        .map(
-          mapNullable((entries) =>
-            IMap<PollId, IPoll>(entries.map(([k, v]) => [k, fillIPoll(v)]))
-          )
-        ).value ?? d.polls,
-    dateToPollIdMap:
-      pipe(p?.dateToPollIdMap)
-        .map(mapNullable(recordEntries))
-        .map(mapNullable((entries) => IMap<DateOptionId, PollId>(entries)))
-        .value ?? d.dateToPollIdMap,
-    commandMessageIdToPollIdMap:
-      pipe(p?.commandMessageIdToPollIdMap)
-        .map(mapNullable(recordEntries))
-        .map(mapNullable((entries) => IMap<CommandMessageId, PollId>(entries)))
-        .value ?? d.commandMessageIdToPollIdMap,
-  });
+export const databaseToJson = (database: Database): DatabaseJson => ({
+  polls: recordFromEntries(database.polls.toEntriesArray()),
+  dateToPollIdMap: recordFromEntries(database.dateToPollIdMap.toEntriesArray()),
+  commandMessageIdToPollIdMap: recordFromEntries(
+    database.commandMessageIdToPollIdMap.toEntriesArray()
+  ),
+});

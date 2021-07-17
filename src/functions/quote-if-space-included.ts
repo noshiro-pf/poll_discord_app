@@ -1,2 +1,2 @@
 export const quoteIfSpaceIncluded = (str: string): string =>
-  /\s/g.test(str) ? `"${str}"` : str;
+  /\s/gu.test(str) ? `"${str}"` : str;

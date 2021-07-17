@@ -1,12 +1,13 @@
-import { EmbedFieldData, MessageEmbed } from 'discord.js';
+import type { IMap } from '@noshiro/ts-utils';
+import type { EmbedFieldData } from 'discord.js';
+import { MessageEmbed } from 'discord.js';
 import { footerText } from '../constants';
-import { IPoll } from '../types/poll';
-import { UserId } from '../types/types';
-import { IMap } from '../utils/immutable';
-import { createSummaryField } from './cretate-summary-value';
+import type { Poll } from '../types/poll';
+import type { UserId } from '../types/types';
+import { createSummaryField } from './create-summary-value';
 
 export const createSummaryMessage = (
-  poll: IPoll,
+  poll: Poll,
   userIdToDisplayName: IMap<UserId, string>
 ): MessageEmbed =>
   new MessageEmbed()
@@ -17,9 +18,7 @@ export const createSummaryMessage = (
     .setTimestamp();
 
 const createSummaryFields = (
-  poll: IPoll,
+  poll: Poll,
   userIdToDisplayName: IMap<UserId, string>
 ): EmbedFieldData[] =>
-  poll.dateOptions
-    .map((d) => createSummaryField(d, poll, userIdToDisplayName))
-    .toArray();
+  poll.dateOptions.map((d) => createSummaryField(d, poll, userIdToDisplayName));

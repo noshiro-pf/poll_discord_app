@@ -1,23 +1,25 @@
 import { promiseToResult, Result } from '@noshiro/ts-utils';
-import { MessageReaction, PartialUser, User } from 'discord.js';
-import { Client as PsqlClient } from 'pg';
+import type { MessageReaction, PartialUser, User } from 'discord.js';
+import type { Client as PsqlClient } from 'pg';
 import { emojis } from '../constants';
 import { createSummaryMessage } from '../functions/create-summary-message';
 import { getUserIdsFromAnswers } from '../functions/get-user-ids-from-answers';
 import { createUserIdToDisplayNameMap } from '../functions/user-id-to-display-name';
 import { updateVote } from '../in-memory-database';
-import { AnswerType, DatabaseRef, DateOptionId, UserId } from '../types/types';
+import type { AnswerType, DatabaseRef } from '../types/types';
+import { createDateOptionId, createUserId } from '../types/types';
 
 export const onMessageReactCommon = async (
   databaseRef: DatabaseRef,
+  // eslint-disable-next-line noshiro-custom/prefer-readonly-parameter-types
   psqlClient: PsqlClient,
-  action: { type: 'add' | 'remove'; value: AnswerType | undefined },
+  action: Readonly<{ type: 'add' | 'remove'; value: AnswerType | undefined }>,
   reaction: MessageReaction,
-  user: User | PartialUser
+  user: PartialUser | User
 ): Promise<Result<undefined, unknown>> => {
-  if (reaction.partial) {
-    reaction = await reaction.fetch();
-  }
+  const reactionFilled: MessageReaction = reaction.partial
+    ? await reaction.fetch()
+    : reaction;
 
   if (user.bot) return Result.ok(undefined);
   if (action.value === undefined) return Result.ok(undefined);
@@ -26,22 +28,22 @@ export const onMessageReactCommon = async (
     updateVote(
       databaseRef,
       psqlClient,
-      reaction.message.id as DateOptionId,
-      user.id as UserId,
+      createDateOptionId(reactionFilled.message.id),
+      createUserId(user.id),
       { type: action.type, value: action.value }
     ),
-    reaction.message.channel.messages.fetch({
-      after: reaction.message.id,
+    reactionFilled.message.channel.messages.fetch({
+      after: reactionFilled.message.id,
     }),
   ]);
 
   if (Result.isErr(resultPollResult)) return resultPollResult;
   const resultPoll = resultPollResult.value;
-  if (!messages) return Result.err('messages not found.');
+  if (messages.size === 0) return Result.err('messages not found.');
 
   const userIdToDisplayName = await createUserIdToDisplayNameMap({
     userIds: getUserIdsFromAnswers(resultPoll.answers),
-    message: reaction.message,
+    message: reactionFilled.message,
   });
 
   const result = await promiseToResult(
@@ -66,11 +68,12 @@ const mapReactionEmojiNameToAnswerType = (
     ? 'neither'
     : undefined;
 
-export const onMessageReactionAdd = async (
+export const onMessageReactionAdd = (
   databaseRef: DatabaseRef,
+  // eslint-disable-next-line noshiro-custom/prefer-readonly-parameter-types
   psqlClient: PsqlClient,
   reaction: MessageReaction,
-  user: User | PartialUser
+  user: PartialUser | User
 ): Promise<Result<undefined, unknown>> =>
   onMessageReactCommon(
     databaseRef,
@@ -83,11 +86,12 @@ export const onMessageReactionAdd = async (
     user
   );
 
-export const onMessageReactionRemove = async (
+export const onMessageReactionRemove = (
   databaseRef: DatabaseRef,
+  // eslint-disable-next-line noshiro-custom/prefer-readonly-parameter-types
   psqlClient: PsqlClient,
   reaction: MessageReaction,
-  user: User | PartialUser
+  user: PartialUser | User
 ): Promise<Result<undefined, unknown>> =>
   onMessageReactCommon(
     databaseRef,

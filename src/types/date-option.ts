@@ -1,25 +1,20 @@
-import { IRecord } from '../utils/immutable';
-import { DateOptionId } from './types';
+import type { DateOptionId } from './types';
+import { createDateOptionId } from './types';
 
-type DateOptionBaseType = Readonly<{
+export type DateOption = Readonly<{
   id: DateOptionId;
   label: string;
 }>;
 
-export type PartialDateOptionJs = Partial<Readonly<DateOptionBaseType>>;
+export type PartialDateOption = Partial<DateOption>;
 
-export type IDateOption = IRecord<DateOptionBaseType> &
-  Readonly<DateOptionBaseType>;
-
-const IDateOptionRecordFactory = IRecord<DateOptionBaseType>({
-  id: '' as DateOptionId,
+const defaultDateOption: DateOption = {
+  id: createDateOptionId(''),
   label: '',
+} as const;
+
+const d = defaultDateOption;
+export const fillDateOption = (from: PartialDateOption): DateOption => ({
+  id: from.id ?? d.id,
+  label: from.label ?? d.label,
 });
-
-export const createIDateOption: (
-  from?: DateOptionBaseType
-) => IDateOption = IDateOptionRecordFactory;
-
-export const fillDateOption: (
-  from: PartialDateOptionJs
-) => IDateOption = IDateOptionRecordFactory;

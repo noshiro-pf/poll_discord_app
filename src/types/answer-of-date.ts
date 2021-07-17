@@ -1,39 +1,41 @@
-import { mapNullable, pipeClass as pipe } from '@noshiro/ts-utils';
-import { IRecord, ISet } from '../utils/immutable';
-import { UserId } from './types';
+import type { DeepReadonly, JsonType, TypeExtends } from '@noshiro/ts-utils';
+import { assertType, ISet, mapNullable, pipe } from '@noshiro/ts-utils';
+import type { UserId } from './types';
 
-type AnswerOfDateBaseType = Readonly<{
+export type AnswerOfDate = Readonly<{
   ok: ISet<UserId>;
   ng: ISet<UserId>;
   neither: ISet<UserId>;
 }>;
 
-export type PartialAnswerOfDateJs = Partial<
-  Readonly<{
-    ok: readonly UserId[];
-    ng: readonly UserId[];
-    neither: readonly UserId[];
+export type AnswerOfDateJson = DeepReadonly<{
+  ok: string[];
+  ng: string[];
+  neither: string[];
+}>;
+
+assertType<TypeExtends<AnswerOfDateJson, JsonType>>();
+
+export type PartialAnswerOfDateJson = Partial<
+  DeepReadonly<{
+    ok: UserId[];
+    ng: UserId[];
+    neither: UserId[];
   }>
 >;
 
-export type IAnswerOfDate = IRecord<AnswerOfDateBaseType> &
-  Readonly<AnswerOfDateBaseType>;
+export const defaultAnswerOfDate: AnswerOfDate = {
+  ok: ISet.new<UserId>([]),
+  ng: ISet.new<UserId>([]),
+  neither: ISet.new<UserId>([]),
+} as const;
 
-const IAnswerOfDateRecordFactory = IRecord<AnswerOfDateBaseType>({
-  ok: ISet<UserId>(),
-  ng: ISet<UserId>(),
-  neither: ISet<UserId>(),
+const d = defaultAnswerOfDate;
+export const fillAnswerOfDate = (
+  p?: PartialAnswerOfDateJson
+): AnswerOfDate => ({
+  ok: pipe(p?.ok).chain((v) => mapNullable(v, ISet.new)).value ?? d.ok,
+  ng: pipe(p?.ng).chain((v) => mapNullable(v, ISet.new)).value ?? d.ng,
+  neither:
+    pipe(p?.neither).chain((v) => mapNullable(v, ISet.new)).value ?? d.neither,
 });
-
-export const createIAnswerOfDate: (
-  a?: AnswerOfDateBaseType
-) => IAnswerOfDate = IAnswerOfDateRecordFactory;
-
-const d = IAnswerOfDateRecordFactory();
-export const fillAnswerOfDate = (p?: PartialAnswerOfDateJs): IAnswerOfDate =>
-  createIAnswerOfDate({
-    ok: pipe(p?.ok).map(mapNullable((a) => ISet(a))).value ?? d.ok,
-    ng: pipe(p?.ng).map(mapNullable((a) => ISet(a))).value ?? d.ng,
-    neither:
-      pipe(p?.neither).map(mapNullable((a) => ISet(a))).value ?? d.neither,
-  });

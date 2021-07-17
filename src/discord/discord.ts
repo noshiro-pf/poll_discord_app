@@ -1,9 +1,9 @@
 import { promiseToResult, Result } from '@noshiro/ts-utils';
 import { Client as DiscordClient } from 'discord.js';
-import { Client as PsqlClient } from 'pg';
+import type { Client as PsqlClient } from 'pg';
 import { replyTriggerCommand } from '../constants';
 import { DISCORD_TOKEN } from '../env';
-import { DatabaseRef } from '../types/types';
+import type { DatabaseRef } from '../types/types';
 import { onMessageReactionAdd, onMessageReactionRemove } from './reaction';
 import { sendPollMessage } from './send-poll-message';
 import { updatePollTitle } from './update-poll-title';
@@ -22,24 +22,36 @@ export const initDiscordClient = (): Promise<Result<DiscordClient, unknown>> =>
               name: replyTriggerCommand,
               type: 'PLAYING',
             })
-            .then(() => resolve(Result.ok(undefined)))
-            .catch((err) => resolve(Result.err(err)));
+            .then(() => {
+              resolve(Result.ok(undefined));
+            })
+            .catch((err) => {
+              resolve(Result.err(err));
+            });
         });
       }),
       promiseToResult(discordClient.login(DISCORD_TOKEN)),
     ])
-      .then(([ready, login]) =>
-        Result.isErr(ready)
-          ? resolveAll(Result.err(ready))
-          : Result.isErr(login)
-          ? resolveAll(Result.err(login))
-          : resolveAll(Result.ok(discordClient))
-      )
-      .catch(() => resolveAll(Result.err(undefined)));
+      .then(([ready, login]) => {
+        if (Result.isErr(ready)) {
+          resolveAll(Result.err(ready));
+        } else {
+          if (Result.isErr(login)) {
+            resolveAll(Result.err(login));
+          } else {
+            resolveAll(Result.ok(discordClient));
+          }
+        }
+      })
+      .catch(() => {
+        resolveAll(Result.err(undefined));
+      });
   });
 
 export const startDiscordListener = (
+  // eslint-disable-next-line noshiro-custom/prefer-readonly-parameter-types
   discordClient: DiscordClient,
+  // eslint-disable-next-line noshiro-custom/prefer-readonly-parameter-types
   psqlClient: PsqlClient,
   databaseRef: DatabaseRef
 ): void => {
@@ -67,7 +79,7 @@ export const startDiscordListener = (
     updatePollTitle(databaseRef, psqlClient, newMessage)
       .then((result) => {
         if (Result.isErr(result)) {
-          console.error('on message erorr:', result);
+          console.error('on message error:', result);
         }
       })
       .catch(console.error);
@@ -77,7 +89,7 @@ export const startDiscordListener = (
     sendPollMessage(databaseRef, psqlClient, message)
       .then((result) => {
         if (Result.isErr(result)) {
-          console.error('on message erorr:', result);
+          console.error('on message error:', result);
         }
       })
       .catch(console.error);

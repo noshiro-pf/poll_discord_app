@@ -1,72 +1,88 @@
+import type { DeepReadonly, JsonType, TypeExtends } from '@noshiro/ts-utils';
 import {
+  assertType,
+  IMap,
   mapNullable,
-  pipeClass as pipe,
+  pipe,
   recordEntries,
 } from '@noshiro/ts-utils';
-import { IList, IMap, IRecord } from '../utils/immutable';
-import {
-  fillAnswerOfDate,
-  IAnswerOfDate,
-  PartialAnswerOfDateJs,
+import type {
+  AnswerOfDate,
+  AnswerOfDateJson,
+  PartialAnswerOfDateJson,
 } from './answer-of-date';
+import { fillAnswerOfDate } from './answer-of-date';
+import type { DateOption, PartialDateOption } from './date-option';
+import { fillDateOption } from './date-option';
+import type { DateOptionId, PollId, Timestamp, TitleMessageId } from './types';
 import {
-  fillDateOption,
-  IDateOption,
-  PartialDateOptionJs,
-} from './date-option';
-import { DateOptionId, PollId, Timestamp, TitleMessageId } from './types';
+  createDateOptionId,
+  createPollId,
+  createTimestamp,
+  createTitleMessageId,
+} from './types';
 
-type PollBaseType = Readonly<{
+export type Poll = DeepReadonly<{
   id: PollId;
   title: string;
   updatedAt: Timestamp; // timestamp
-  dateOptions: IList<IDateOption>; // used to find this Poll object from button message that represents date option
-  answers: IMap<DateOptionId, IAnswerOfDate>;
+  dateOptions: DateOption[]; // used to find this Poll object from button message that represents date option
+  answers: IMap<DateOptionId, AnswerOfDate>;
   titleMessageId: TitleMessageId;
 }>;
 
-export type PartialPollJs = Partial<
-  Readonly<{
+export type PollJson = DeepReadonly<{
+  id: string;
+  title: string;
+  updatedAt: Timestamp;
+  dateOptions: DateOption[];
+  answers: Record<string, AnswerOfDateJson>;
+  titleMessageId: TitleMessageId;
+}>;
+
+assertType<TypeExtends<PollJson, JsonType>>();
+
+export type PartialPollJson = Partial<
+  DeepReadonly<{
     id: PollId;
     title: string;
     updatedAt: Timestamp;
-    dateOptions: readonly PartialDateOptionJs[];
-    answers: Record<DateOptionId, PartialAnswerOfDateJs>;
+    dateOptions: PartialDateOption[];
+    answers: Record<string, PartialAnswerOfDateJson>;
     titleMessageId: TitleMessageId;
   }>
 >;
 
-export type IPoll = IRecord<PollBaseType> & Readonly<PollBaseType>;
-
-const IPollRecordFactory = IRecord<PollBaseType>({
-  id: '' as PollId,
+const defaultPoll: Poll = {
+  id: createPollId(''),
   title: '',
-  updatedAt: Date.now() as Timestamp,
-  dateOptions: IList<IDateOption>(),
-  answers: IMap<DateOptionId, IAnswerOfDate>(),
-  titleMessageId: '' as TitleMessageId,
-});
+  updatedAt: createTimestamp(Date.now()),
+  dateOptions: [],
+  answers: IMap.new<DateOptionId, AnswerOfDate>([]),
+  titleMessageId: createTitleMessageId(''),
+} as const;
 
-export const createIPoll: (a?: PollBaseType) => IPoll = IPollRecordFactory;
-
-const d = IPollRecordFactory();
-export const fillIPoll = (p?: PartialPollJs): IPoll =>
-  createIPoll({
-    id: p?.id ?? d.id,
-    title: p?.title ?? d.title,
-    updatedAt: p?.updatedAt ?? d.updatedAt,
-    dateOptions:
-      pipe(p?.dateOptions).map(mapNullable((a) => IList(a.map(fillDateOption))))
-        .value ?? d.dateOptions,
-    answers:
-      pipe(p?.answers)
-        .map(mapNullable(recordEntries))
-        .map(
-          mapNullable((entries) =>
-            IMap<DateOptionId, IAnswerOfDate>(
-              entries.map(([k, v]) => [k, fillAnswerOfDate(v)])
-            )
+const d = defaultPoll;
+export const fillPoll = (p?: PartialPollJson): Poll => ({
+  id: p?.id ?? d.id,
+  title: p?.title ?? d.title,
+  updatedAt: p?.updatedAt ?? d.updatedAt,
+  dateOptions:
+    pipe(p?.dateOptions).chain((v) =>
+      mapNullable(v, (a) => a.map(fillDateOption))
+    ).value ?? d.dateOptions,
+  answers:
+    pipe(p?.answers)
+      .chain((v) => mapNullable(v, recordEntries))
+      .chain((a) =>
+        mapNullable(a, (entries) =>
+          IMap.new<DateOptionId, AnswerOfDate>(
+            entries.map(([k, v]) => [
+              createDateOptionId(k),
+              fillAnswerOfDate(v),
+            ])
           )
-        ).value ?? d.answers,
-    titleMessageId: p?.titleMessageId ?? d.titleMessageId,
-  });
+        )
+      ).value ?? d.answers,
+  titleMessageId: p?.titleMessageId ?? d.titleMessageId,
+});

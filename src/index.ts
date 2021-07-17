@@ -4,14 +4,14 @@ import { initDiscordClient, startDiscordListener } from './discord/discord';
 import { DATABASE_URL, isDev } from './env';
 import { initializeInMemoryDatabase } from './in-memory-database';
 import { psql } from './postgre-sql';
-import { createIDatabase } from './types/database';
-import { DatabaseRef } from './types/types';
+import { defaultDatabase } from './types/database';
+import type { DatabaseRef } from './types/types';
 
 const main = async (): Promise<Result<unknown, unknown>> => {
   psql.setTlsRejectUnauthorized0();
 
   const databaseRef: DatabaseRef = {
-    db: createIDatabase(),
+    db: defaultDatabase,
   };
 
   const [psqlClientResult, discordClientResult] = await Promise.all([
@@ -44,7 +44,7 @@ const main = async (): Promise<Result<unknown, unknown>> => {
     return hasRecordOfIdResult;
   }
 
-  if (hasRecordOfIdResult.value === false) {
+  if (!hasRecordOfIdResult.value) {
     const res = await psql.createRecord(psqlClient, psqlRowId);
     if (Result.isErr(res)) {
       console.error('psql.createRecord failed.', res.value);

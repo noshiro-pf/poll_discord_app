@@ -1,32 +1,34 @@
-import { isNotUndefined } from '@noshiro/ts-utils';
-import { EmbedFieldData } from 'discord.js';
+import type { IMap } from '@noshiro/ts-utils';
+import { IList, ISet, isNotUndefined } from '@noshiro/ts-utils';
+import type { EmbedFieldData } from 'discord.js';
 import { emojis } from '../constants';
-import { IAnswerOfDate } from '../types/answer-of-date';
-import { IDateOption } from '../types/date-option';
-import { IPoll } from '../types/poll';
-import { AnswerType, UserId } from '../types/types';
-import { IMap, ISet } from '../utils/immutable';
-import { userIdToMension } from './user-id-to-mension';
+import type { AnswerOfDate } from '../types/answer-of-date';
+import type { DateOption } from '../types/date-option';
+import type { Poll } from '../types/poll';
+import type { AnswerType, UserId } from '../types/types';
+import { userIdToMention } from './user-id-to-mention';
 
 export const createSummaryField = (
-  dateOption: IDateOption,
-  poll: IPoll,
+  dateOption: DateOption,
+  poll: Poll,
   userIdToDisplayName: IMap<UserId, string>
 ): EmbedFieldData => {
   const answerOfDate = poll.answers.get(dateOption.id);
   if (answerOfDate === undefined) {
     return formatEmbedFieldData(
       dateOption.label,
-      toUserListString(ISet(), userIdToDisplayName)
+      toUserListString(ISet.new<UserId>([]), userIdToDisplayName)
     );
   }
   if (
-    answerOfDate.ok.size + answerOfDate.neither.size + answerOfDate.ng.size ===
+    (answerOfDate.ok.size as number) +
+      (answerOfDate.neither.size as number) +
+      (answerOfDate.ng.size as number) ===
     0
   ) {
     return formatEmbedFieldData(
       dateOption.label,
-      toUserListString(ISet(), userIdToDisplayName)
+      toUserListString(ISet.new<UserId>([]), userIdToDisplayName)
     );
   }
 
@@ -37,23 +39,26 @@ export const createSummaryField = (
   );
 };
 
-const formatEmbedFieldData = (name: string, value: string): EmbedFieldData => ({
-  name: `**${name}**`,
+const formatEmbedFieldData = (
+  pollName: string,
+  value: string
+): EmbedFieldData => ({
+  name: `**${pollName}**`,
   value,
 });
 
 const createSummaryFieldSub = (
-  name: string,
-  answerOfDate: IAnswerOfDate,
+  pollName: string,
+  answerOfDate: AnswerOfDate,
   userIdToDisplayName: IMap<UserId, string>
 ): EmbedFieldData =>
   formatEmbedFieldData(
-    name,
+    pollName,
     createSummaryValue(answerOfDate, userIdToDisplayName)
   );
 
 export const createSummaryValue = (
-  value: IAnswerOfDate,
+  value: AnswerOfDate,
   userIdToDisplayName: IMap<UserId, string>
 ): string =>
   [
@@ -88,7 +93,8 @@ const toUserListString = (
   reactions: ISet<UserId>,
   userIdToDisplayName: IMap<UserId, string>
 ): string =>
-  `\t(${reactions.size})\t${reactions
-    .sort()
-    .map((id) => userIdToDisplayName.get(id) ?? userIdToMension(id))
+  `\t(${reactions.size})\t${IList.sort(reactions.toArray(), (a, b) =>
+    a.localeCompare(b)
+  )
+    .map((id) => userIdToDisplayName.get(id) ?? userIdToMention(id))
     .join(', ')}`.trimEnd();

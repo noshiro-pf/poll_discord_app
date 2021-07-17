@@ -1,75 +1,78 @@
-import { promiseToResult, Result, tuple } from '@noshiro/ts-utils';
-import { DMChannel, Message, NewsChannel, TextChannel } from 'discord.js';
-import { Client as PsqlClient } from 'pg';
+import type { DeepReadonly } from '@noshiro/ts-utils';
+import { IMap, promiseToResult, Result, tuple } from '@noshiro/ts-utils';
+import type { DMChannel, Message, NewsChannel, TextChannel } from 'discord.js';
+import type { Client as PsqlClient } from 'pg';
 import { emojis, replyTriggerCommand } from '../constants';
 import { createSummaryMessage } from '../functions/create-summary-message';
 import { createTitleString } from '../functions/create-title-string';
 import { parseCommandArgument } from '../functions/parse-command';
 import { addPoll } from '../in-memory-database';
-import { createIAnswerOfDate, IAnswerOfDate } from '../types/answer-of-date';
-import { createIDateOption, IDateOption } from '../types/date-option';
-import { createIPoll } from '../types/poll';
-import {
-  CommandMessageId,
+import type { AnswerOfDate } from '../types/answer-of-date';
+import { defaultAnswerOfDate } from '../types/answer-of-date';
+import type { DateOption } from '../types/date-option';
+import type {
   DatabaseRef,
   DateOptionId,
-  PollId,
-  Timestamp,
   TitleMessageId,
   UserId,
 } from '../types/types';
-import { IList, IMap } from '../utils/immutable';
+import {
+  createCommandMessageId,
+  createDateOptionId,
+  createPollId,
+  createTimestamp,
+  createTitleMessageId,
+} from '../types/types';
 
 const sendPollMessageSub = async (
-  messageChannel: TextChannel | DMChannel | NewsChannel,
+  messageChannel: DMChannel | NewsChannel | TextChannel,
   title: string,
-  args: string[]
+  args: readonly string[]
 ): Promise<
   Result<
-    {
-      dateOptions: IList<IDateOption>;
-      dateOptionMessageList: IList<Message>;
+    DeepReadonly<{
+      dateOptions: DateOption[];
+      dateOptionMessageList: Message[];
       summaryMessage: Message;
       titleMessageId: TitleMessageId;
-    },
+    }>,
     unknown
   >
 > => {
   const titleMessage = await messageChannel.send(createTitleString(title));
-  const titleMessageId = titleMessage.id as TitleMessageId;
+  const titleMessageId = createTitleMessageId(titleMessage.id);
 
-  const dateOptionAndMessageListTemp: [IDateOption, Message][] = [];
+  const dateOptionAndMessageListTemp: [DateOption, Message][] = [];
 
   for (const el of args) {
+    // eslint-disable-next-line no-await-in-loop
     const result = await promiseToResult(messageChannel.send(el));
 
     if (Result.isErr(result)) return result;
     dateOptionAndMessageListTemp.push([
-      createIDateOption({
+      {
         label: el,
-        id: result.value.id as DateOptionId,
-      }),
+        id: createDateOptionId(result.value.id),
+      },
       result.value,
     ]);
   }
 
-  const dateOptionMessageList = IList(
-    dateOptionAndMessageListTemp.map(([, a]) => a)
-  );
-  const dateOptions = IList(dateOptionAndMessageListTemp.map(([a]) => a));
+  const dateOptionMessageList = dateOptionAndMessageListTemp.map(([, a]) => a);
+  const dateOptions = dateOptionAndMessageListTemp.map(([a]) => a);
 
   const summaryMessageEmbed = createSummaryMessage(
-    createIPoll({
-      id: '' as PollId,
-      updatedAt: Date.now() as Timestamp,
+    {
+      id: createPollId(''),
+      updatedAt: createTimestamp(Date.now()),
       title: title ?? '',
       dateOptions,
-      answers: IMap<DateOptionId, IAnswerOfDate>(
-        dateOptions.map((d) => tuple(d.id, createIAnswerOfDate()))
+      answers: IMap.new<DateOptionId, AnswerOfDate>(
+        dateOptions.map((d) => tuple(d.id, defaultAnswerOfDate))
       ),
       titleMessageId,
-    }),
-    IMap<UserId, string>()
+    },
+    IMap.new<UserId, string>([])
   );
 
   const summaryMessageInitResult = await promiseToResult(
@@ -99,56 +102,55 @@ const sendPollMessageSub = async (
 
 export const sendPollMessage = async (
   databaseRef: DatabaseRef,
+  // eslint-disable-next-line noshiro-custom/prefer-readonly-parameter-types
   psqlClient: PsqlClient,
   message: Message
 ): Promise<Result<undefined, unknown>> => {
-  if (message.partial) {
-    message = await message.fetch();
-  }
+  const messageFilled: Message = message.partial
+    ? await message.fetch()
+    : message;
 
-  if (message.author.bot) return Result.ok(undefined);
+  if (messageFilled.author.bot) return Result.ok(undefined);
 
-  if (!message.content.startsWith(`${replyTriggerCommand} `))
+  if (!messageFilled.content.startsWith(`${replyTriggerCommand} `))
     return Result.ok(undefined);
 
-  const [title, ...args] = parseCommandArgument(message.content);
+  const [title, ...args] = parseCommandArgument(messageFilled.content);
 
   if (title === undefined) return Result.ok(undefined);
   if (args.length === 0) return Result.ok(undefined);
 
-  const replySubResult = await sendPollMessageSub(message.channel, title, args);
+  const replySubResult = await sendPollMessageSub(
+    messageFilled.channel,
+    title,
+    args
+  );
   if (Result.isErr(replySubResult)) return replySubResult;
-  const {
-    summaryMessage,
-    dateOptions,
-    dateOptionMessageList,
-    titleMessageId,
-  } = replySubResult.value;
+  const { summaryMessage, dateOptions, dateOptionMessageList, titleMessageId } =
+    replySubResult.value;
 
   const addPollResult = await addPoll(
     databaseRef,
     psqlClient,
-    createIPoll({
-      id: summaryMessage.id as PollId,
-      updatedAt: (summaryMessage.createdTimestamp ?? Date.now()) as Timestamp,
+    {
+      id: createPollId(summaryMessage.id),
+      updatedAt: createTimestamp(summaryMessage.createdTimestamp ?? Date.now()),
       title: title ?? '',
       dateOptions,
-      answers: IMap<DateOptionId, IAnswerOfDate>(
-        dateOptions.map((d) => tuple(d.id, createIAnswerOfDate()))
+      answers: IMap.new<DateOptionId, AnswerOfDate>(
+        dateOptions.map((d) => tuple(d.id, defaultAnswerOfDate))
       ),
       titleMessageId,
-    }),
-    message.id as CommandMessageId
+    },
+    createCommandMessageId(messageFilled.id)
   );
 
   await Promise.all(
-    dateOptionMessageList
-      .map(async (message) => {
-        await message.react(emojis.ok.unicode);
-        await message.react(emojis.neither.unicode);
-        await message.react(emojis.ng.unicode);
-      })
-      .toArray()
+    dateOptionMessageList.map(async (msg) => {
+      await msg.react(emojis.ok.unicode);
+      await msg.react(emojis.neither.unicode);
+      await msg.react(emojis.ng.unicode);
+    })
   );
 
   return addPollResult;
