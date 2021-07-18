@@ -1,7 +1,7 @@
 import type { IMap } from '@noshiro/ts-utils';
 import type { EmbedFieldData } from 'discord.js';
 import { MessageEmbed } from 'discord.js';
-import { footerText } from '../constants';
+import { embedMessageColor, footerText } from '../constants';
 import type { Poll } from '../types/poll';
 import type { UserId } from '../types/types';
 import { createSummaryField } from './create-summary-value';
@@ -11,7 +11,7 @@ export const createSummaryMessage = (
   userIdToDisplayName: IMap<UserId, string>
 ): MessageEmbed =>
   new MessageEmbed()
-    .setColor('#3e68b0')
+    .setColor(embedMessageColor)
     .setTitle(`Collected Results for "${poll.title}"`)
     .addFields(createSummaryFields(poll, userIdToDisplayName))
     .setFooter(footerText)
