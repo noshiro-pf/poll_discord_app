@@ -9,8 +9,7 @@ import {
   recordEntries,
   recordFromEntries,
 } from '@noshiro/ts-utils';
-import type { PartialPollJson, Poll, PollJson } from './poll';
-import { fillPoll } from './poll';
+import { fillPoll, PartialPollJson, Poll, PollJson, pollToJson } from './poll';
 import type { CommandMessageId, DateOptionId, PollId } from './types';
 import {
   createCommandMessageId,
@@ -25,18 +24,18 @@ export type Database = Readonly<{
 }>;
 
 export type DatabaseJson = DeepReadonly<{
-  polls: Record<string, PollJson>;
-  dateToPollIdMap: Record<string, PollId>;
-  commandMessageIdToPollIdMap: Record<string, PollId>;
+  polls: Record<PollId, PollJson>;
+  dateToPollIdMap: Record<DateOptionId, PollId>;
+  commandMessageIdToPollIdMap: Record<CommandMessageId, PollId>;
 }>;
 
 assertType<TypeExtends<DatabaseJson, JsonType>>();
 
 export type PartialDatabaseJson = Partial<
   Readonly<{
-    polls: Record<string, PartialPollJson>;
-    dateToPollIdMap: Partial<Record<string, PollId>>;
-    commandMessageIdToPollIdMap: Partial<Record<string, PollId>>;
+    polls: Record<PollId, PartialPollJson>;
+    dateToPollIdMap: Partial<Record<DateOptionId, PollId>>;
+    commandMessageIdToPollIdMap: Partial<Record<CommandMessageId, PollId>>;
   }>
 >;
 
@@ -97,7 +96,7 @@ export const fillDatabase = (p?: PartialDatabaseJson): Database => ({
 });
 
 export const databaseToJson = (database: Database): DatabaseJson => ({
-  polls: recordFromEntries(database.polls.toEntriesArray()),
+  polls: recordFromEntries(database.polls.map(pollToJson).toEntriesArray()),
   dateToPollIdMap: recordFromEntries(database.dateToPollIdMap.toEntriesArray()),
   commandMessageIdToPollIdMap: recordFromEntries(
     database.commandMessageIdToPollIdMap.toEntriesArray()

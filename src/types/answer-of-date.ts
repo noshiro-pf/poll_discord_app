@@ -39,3 +39,9 @@ export const fillAnswerOfDate = (
   neither:
     pipe(p?.neither).chain((v) => mapNullable(v, ISet.new)).value ?? d.neither,
 });
+
+export const answerOfDateToJson = (a: AnswerOfDate): AnswerOfDateJson => ({
+  ok: a.ok.toArray(),
+  ng: a.ng.toArray(),
+  neither: a.neither.toArray(),
+});

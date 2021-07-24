@@ -1,17 +1,21 @@
-import type { DeepReadonly, JsonType, TypeExtends } from '@noshiro/ts-utils';
 import {
   assertType,
+  DeepReadonly,
   IMap,
+  JsonType,
   mapNullable,
   pipe,
   recordEntries,
+  recordFromEntries,
+  TypeExtends,
 } from '@noshiro/ts-utils';
-import type {
+import {
   AnswerOfDate,
   AnswerOfDateJson,
+  answerOfDateToJson,
+  fillAnswerOfDate,
   PartialAnswerOfDateJson,
 } from './answer-of-date';
-import { fillAnswerOfDate } from './answer-of-date';
 import type { DateOption, PartialDateOption } from './date-option';
 import { fillDateOption } from './date-option';
 import type { DateOptionId, PollId, Timestamp, TitleMessageId } from './types';
@@ -36,7 +40,7 @@ export type PollJson = DeepReadonly<{
   title: string;
   updatedAt: Timestamp;
   dateOptions: DateOption[];
-  answers: Record<string, AnswerOfDateJson>;
+  answers: Record<DateOptionId, AnswerOfDateJson>;
   titleMessageId: TitleMessageId;
 }>;
 
@@ -48,7 +52,7 @@ export type PartialPollJson = Partial<
     title: string;
     updatedAt: Timestamp;
     dateOptions: PartialDateOption[];
-    answers: Record<string, PartialAnswerOfDateJson>;
+    answers: Record<DateOptionId, PartialAnswerOfDateJson>;
     titleMessageId: TitleMessageId;
   }>
 >;
@@ -85,4 +89,15 @@ export const fillPoll = (p?: PartialPollJson): Poll => ({
         )
       ).value ?? d.answers,
   titleMessageId: p?.titleMessageId ?? d.titleMessageId,
+});
+
+export const pollToJson = (p: Poll): PollJson => ({
+  id: p.id,
+  title: p.title,
+  updatedAt: p.updatedAt,
+  dateOptions: p.dateOptions,
+  answers: recordFromEntries(
+    p.answers.map(answerOfDateToJson).toEntriesArray()
+  ),
+  titleMessageId: p.titleMessageId,
 });
