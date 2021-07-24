@@ -9,7 +9,8 @@ import {
   recordEntries,
   recordFromEntries,
 } from '@noshiro/ts-utils';
-import { fillPoll, PartialPollJson, Poll, PollJson, pollToJson } from './poll';
+import type { PartialPollJson, Poll, PollJson } from './poll';
+import { fillPoll, pollToJson } from './poll';
 import type { CommandMessageId, DateOptionId, PollId } from './types';
 import {
   createCommandMessageId,

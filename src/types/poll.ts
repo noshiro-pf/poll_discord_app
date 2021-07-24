@@ -1,21 +1,18 @@
+import type { DeepReadonly, JsonType, TypeExtends } from '@noshiro/ts-utils';
 import {
   assertType,
-  DeepReadonly,
   IMap,
-  JsonType,
   mapNullable,
   pipe,
   recordEntries,
   recordFromEntries,
-  TypeExtends,
 } from '@noshiro/ts-utils';
-import {
+import type {
   AnswerOfDate,
   AnswerOfDateJson,
-  answerOfDateToJson,
-  fillAnswerOfDate,
   PartialAnswerOfDateJson,
 } from './answer-of-date';
+import { answerOfDateToJson, fillAnswerOfDate } from './answer-of-date';
 import type { DateOption, PartialDateOption } from './date-option';
 import { fillDateOption } from './date-option';
 import type { DateOptionId, PollId, Timestamp, TitleMessageId } from './types';

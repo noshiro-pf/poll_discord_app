@@ -1,4 +1,4 @@
-import { promiseToResult, Result } from '@noshiro/ts-utils';
+import { match, promiseToResult, Result } from '@noshiro/ts-utils';
 import type { MessageReaction, PartialUser, User } from 'discord.js';
 import type { Client as PsqlClient } from 'pg';
 import { emojis } from '../constants';
@@ -60,13 +60,11 @@ export const onMessageReactCommon = async (
 const mapReactionEmojiNameToAnswerType = (
   reactionEmojiName: string
 ): AnswerType | undefined =>
-  emojis.ok.unicode === reactionEmojiName
-    ? 'ok'
-    : emojis.ng.unicode === reactionEmojiName
-    ? 'ng'
-    : emojis.neither.unicode === reactionEmojiName
-    ? 'neither'
-    : undefined;
+  match(reactionEmojiName, {
+    [emojis.ok.unicode]: 'ok',
+    [emojis.ng.unicode]: 'ng',
+    [emojis.neither.unicode]: 'neither',
+  });
 
 export const onMessageReactionAdd = (
   databaseRef: DatabaseRef,

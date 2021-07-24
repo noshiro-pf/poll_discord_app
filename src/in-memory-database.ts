@@ -112,20 +112,6 @@ export const updateVote = async (
   return Result.ok(next);
 };
 
-// const readFileAsync = util.promisify(fs.readFile);
-// const writeFileAsync = util.promisify(fs.writeFile);
-
-// const readDatabaseFromJsonFile = async (): Promise<Database> => {
-//   const res = await readFileAsync(paths.dbJson, { encoding: 'utf-8' });
-//   return databaseFromJson(JSON.parse(res));
-// };
-
-// export const writeDatabaseToJsonFile = (database: Database): Promise<void> =>
-//   writeFileAsync(
-//     paths.dbJson,
-//     JSON.stringify(database.toJS(), undefined, isDev ? '  ' : undefined)
-//   );
-
 const databaseFromJson = (dbJson: unknown): Database =>
   typeof dbJson !== 'object' || dbJson === null
     ? defaultDatabase
@@ -148,6 +134,7 @@ export const initializeInMemoryDatabase = async (
 ): Promise<Result<undefined, unknown>> => {
   const res = await psql.getJsonData(psqlClient);
   if (Result.isErr(res)) return res;
+
   ref.db = databaseFromJson(res.value[psqlRowType.data]);
   return Result.ok(undefined);
 };
