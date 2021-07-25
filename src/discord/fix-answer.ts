@@ -1,4 +1,4 @@
-import type { DeepReadonly, IMap } from '@noshiro/ts-utils';
+import type { DeepReadonly } from '@noshiro/ts-utils';
 import {
   IRecord,
   ISet,
@@ -11,6 +11,8 @@ import type { Collection, Message } from 'discord.js';
 import type { Client as PsqlClient } from 'pg';
 import { emojis } from '../constants';
 import { createSummaryMessage } from '../functions/create-summary-message';
+import { getUserIdsFromAnswers } from '../functions/get-user-ids-from-answers';
+import { createUserIdToDisplayNameMap } from '../functions/user-id-to-display-name';
 import { updatePoll } from '../in-memory-database';
 import type { Poll } from '../types/poll';
 import type { DatabaseRef, DateOptionId, UserId } from '../types/types';
@@ -23,8 +25,7 @@ export const fixAnswerAndUpdateMessage = async (
   psqlClient: PsqlClient,
   // eslint-disable-next-line noshiro-custom/prefer-readonly-parameter-types
   messages: Collection<string, Message>,
-  poll: Poll,
-  userIdToDisplayName: IMap<UserId, string>
+  poll: Poll
 ): Promise<Result<undefined, string>> => {
   const dateOptionMessages: DeepReadonly<[string, Message][]> = poll.dateOptions
     .map((dateOption) =>
@@ -77,6 +78,7 @@ export const fixAnswerAndUpdateMessage = async (
       )
     )
   );
+
   /*
     [
       [
@@ -105,7 +107,6 @@ export const fixAnswerAndUpdateMessage = async (
       ]
     ]
   */
-
   const newPollFilled: Poll = IRecord.update(poll, 'answers', (answers) =>
     answers.withMutations(
       reactionsForThisPoll.map(([dateId, reactions]) => ({
@@ -125,6 +126,17 @@ export const fixAnswerAndUpdateMessage = async (
   if (pollMessage === undefined) {
     return Result.err(`message with id ${poll.id} not found`);
   }
+
+  const userIdToDisplayNameResult = await createUserIdToDisplayNameMap(
+    pollMessage.guild,
+    getUserIdsFromAnswers(newPollFilled.answers).toArray()
+  );
+
+  if (Result.isErr(userIdToDisplayNameResult)) {
+    return userIdToDisplayNameResult;
+  }
+
+  const userIdToDisplayName = userIdToDisplayNameResult.value;
 
   const [updatePollResult, editSummaryMessageResult] = await Promise.all([
     updatePoll(databaseRef, psqlClient, newPollFilled),

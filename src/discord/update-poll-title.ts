@@ -75,11 +75,5 @@ export const updatePollTitle = async (
   if (updateTitleMessageResult === undefined) return Result.ok(undefined);
   if (Result.isErr(updateTitleMessageResult)) return updateTitleMessageResult;
 
-  return fixAnswerAndUpdateMessage(
-    databaseRef,
-    psqlClient,
-    messages,
-    poll,
-    userIdToDisplayName
-  );
+  return fixAnswerAndUpdateMessage(databaseRef, psqlClient, messages, poll);
 };

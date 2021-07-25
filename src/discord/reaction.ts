@@ -27,23 +27,11 @@ const onRefreshClick = async (
 
   if (poll === undefined) return Result.err('poll not found');
 
-  const userIdToDisplayNameResult = await createUserIdToDisplayNameMap(
-    reactionFilled.message.guild,
-    getUserIdsFromAnswers(poll.answers).toArray()
-  );
-
-  if (Result.isErr(userIdToDisplayNameResult)) {
-    return userIdToDisplayNameResult;
-  }
-
-  const userIdToDisplayName = userIdToDisplayNameResult.value;
-
   const fixAnswerAndUpdateMessageResult = await fixAnswerAndUpdateMessage(
     databaseRef,
     psqlClient,
     messages,
-    poll,
-    userIdToDisplayName
+    poll
   );
 
   if (Result.isErr(fixAnswerAndUpdateMessageResult)) {
