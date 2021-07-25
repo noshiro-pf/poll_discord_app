@@ -20,7 +20,7 @@
     "heroku:bash": "heroku run bash -a poll-discord-app"
   },
   "dependencies": {
-    "@noshiro/ts-utils": "1.0.24",
+    "@noshiro/ts-utils": "1.0.26",
     "discord.js": "^12.5.1",
     "dotenv": "^8.2.0",
     "pg": "^8.5.1",

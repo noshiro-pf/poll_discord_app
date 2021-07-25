@@ -6,6 +6,7 @@ export const emojis = {
   ok: { unicode: '⭕', name: ':o:' },
   neither: { unicode: '🔺', name: ':small_red_triangle:' },
   ng: { unicode: '❌', name: ':x:' },
+  refresh: { unicode: '🔄', name: ':arrows_counterclockwise:' },
 } as const;
 
 export const embedMessageColor = '#3e68b0';

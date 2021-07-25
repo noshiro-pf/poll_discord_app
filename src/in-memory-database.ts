@@ -63,6 +63,22 @@ export const updatePoll = (
     IRecord.update(ref.db, 'polls', (polls) => polls.set(poll.id, poll))
   );
 
+export const getPollByDateId = (
+  ref: DatabaseRef,
+  dateOptionId: DateOptionId
+): Result<Poll, unknown> => {
+  const pollId = ref.db.dateToPollIdMap.get(dateOptionId);
+  if (pollId === undefined) {
+    return Result.err(`pollId for "${dateOptionId}" not found.`);
+  }
+  const curr = ref.db.polls.get(pollId);
+  if (curr === undefined) {
+    return Result.err(`poll with id ${pollId} not found.`);
+  }
+
+  return Result.ok(curr);
+};
+
 export const updateVote = async (
   ref: DatabaseRef,
   // eslint-disable-next-line noshiro-custom/prefer-readonly-parameter-types
@@ -71,13 +87,9 @@ export const updateVote = async (
   userId: UserId,
   action: Readonly<{ type: 'add' | 'remove'; value: AnswerType }>
 ): Promise<Result<Poll, unknown>> => {
-  const pollId = ref.db.dateToPollIdMap.get(dateOptionId);
-  if (pollId === undefined)
-    return Result.err(`pollId for "${dateOptionId}" not found.`);
-
-  const curr = ref.db.polls.get(pollId);
-  if (curr === undefined)
-    return Result.err(`poll with id ${pollId} not found.`);
+  const pollResult = getPollByDateId(ref, dateOptionId);
+  if (Result.isErr(pollResult)) return Result.err(undefined);
+  const curr = pollResult.value;
 
   const next = pipe(curr)
     .chain((poll) =>
@@ -100,6 +112,8 @@ export const updateVote = async (
         })
       )
     ).value;
+
+  const pollId = curr.id;
 
   const res = await setDatabase(
     ref,

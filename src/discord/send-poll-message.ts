@@ -92,6 +92,12 @@ const sendPollMessageSub = async (
 
   const summaryMessage = summaryMessageEditResult.value;
 
+  const summaryMessageReactResult = await promiseToResult(
+    summaryMessage.react(emojis.refresh.unicode)
+  );
+
+  if (Result.isErr(summaryMessageReactResult)) return summaryMessageReactResult;
+
   return Result.ok({
     titleMessageId,
     dateOptions,
