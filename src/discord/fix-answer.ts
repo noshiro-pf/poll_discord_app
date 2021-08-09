@@ -10,7 +10,7 @@ import {
 import type { Collection, Message } from 'discord.js';
 import type { Client as PsqlClient } from 'pg';
 import { emojis } from '../constants';
-import { createSummaryMessage } from '../functions/create-summary-message';
+import { rpCreateSummaryMessage } from '../functions/create-summary-message';
 import { getUserIdsFromAnswers } from '../functions/get-user-ids-from-answers';
 import { createUserIdToDisplayNameMap } from '../functions/user-id-to-display-name';
 import { updatePoll } from '../in-memory-database';
@@ -142,7 +142,7 @@ export const fixAnswerAndUpdateMessage = async (
     updatePoll(databaseRef, psqlClient, newPollFilled),
     promiseToResult(
       pollMessage
-        .edit(createSummaryMessage(newPollFilled, userIdToDisplayName))
+        .edit(rpCreateSummaryMessage(newPollFilled, userIdToDisplayName))
         .then(() => undefined)
     ),
   ]);

@@ -1,11 +1,11 @@
 import { IRecord, promiseToResult, Result } from '@noshiro/ts-utils';
 import type { Message, PartialMessage } from 'discord.js';
 import type { Client as PsqlClient } from 'pg';
-import { replyTriggerCommand } from '../constants';
-import { createSummaryMessage } from '../functions/create-summary-message';
+import { rpReplyTriggerCommand } from '../constants';
+import { rpCreateSummaryMessage } from '../functions/create-summary-message';
 import { createTitleString } from '../functions/create-title-string';
 import { getUserIdsFromAnswers } from '../functions/get-user-ids-from-answers';
-import { parseCommandArgument } from '../functions/parse-command';
+import { rpParseCommandArgument } from '../functions/parse-command';
 import { createUserIdToDisplayNameMap } from '../functions/user-id-to-display-name';
 import type { DatabaseRef } from '../types/types';
 import { createCommandMessageId } from '../types/types';
@@ -21,10 +21,10 @@ export const updatePollTitle = async (
 
   if (messageFilled.author.bot) return Result.ok(undefined);
 
-  if (!messageFilled.content.startsWith(`${replyTriggerCommand} `))
+  if (!messageFilled.content.startsWith(`${rpReplyTriggerCommand} `))
     return Result.ok(undefined);
 
-  const [title] = parseCommandArgument(messageFilled.content);
+  const [title] = rpParseCommandArgument(messageFilled.content);
 
   if (title === undefined) return Result.ok(undefined);
 
@@ -59,7 +59,7 @@ export const updatePollTitle = async (
       promiseToResult(
         messages
           .find((m) => m.id === pollId)
-          ?.edit(createSummaryMessage(newPoll, userIdToDisplayName)) ??
+          ?.edit(rpCreateSummaryMessage(newPoll, userIdToDisplayName)) ??
           Promise.resolve(undefined)
       ),
       promiseToResult(

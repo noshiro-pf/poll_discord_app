@@ -2,7 +2,7 @@ import { match, promiseToResult, Result } from '@noshiro/ts-utils';
 import type { MessageReaction, PartialUser, User } from 'discord.js';
 import type { Client as PsqlClient } from 'pg';
 import { emojis } from '../constants';
-import { createSummaryMessage } from '../functions/create-summary-message';
+import { rpCreateSummaryMessage } from '../functions/create-summary-message';
 import { getUserIdsFromAnswers } from '../functions/get-user-ids-from-answers';
 import { createUserIdToDisplayNameMap } from '../functions/user-id-to-display-name';
 import { updateVote } from '../in-memory-database';
@@ -114,7 +114,7 @@ export const onMessageReactCommon = async (
   const result = await promiseToResult(
     messages
       .find((m) => m.id === resultPoll.id)
-      ?.edit(createSummaryMessage(resultPoll, userIdToDisplayName))
+      ?.edit(rpCreateSummaryMessage(resultPoll, userIdToDisplayName))
       .then(() => undefined) ??
       Promise.reject(Result.err(`message with id ${resultPoll.id} not found`))
   );

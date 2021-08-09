@@ -1,11 +1,15 @@
 import { promiseToResult, Result } from '@noshiro/ts-utils';
 import { Client as DiscordClient } from 'discord.js';
 import type { Client as PsqlClient } from 'pg';
-import { replyTriggerCommand } from '../constants';
+import {
+  gpReplyTriggerCommand,
+  gpReplyTriggerCommandRand,
+  rpReplyTriggerCommand,
+} from '../constants';
 import { DISCORD_TOKEN } from '../env';
 import type { DatabaseRef } from '../types/types';
 import { onMessageReactionAdd, onMessageReactionRemove } from './reaction';
-import { sendPollMessage } from './send-poll-message';
+import { sendMessageMain } from './send-poll-message';
 import { updatePollTitle } from './update-poll-title';
 
 export const initDiscordClient = (): Promise<Result<DiscordClient, unknown>> =>
@@ -19,7 +23,7 @@ export const initDiscordClient = (): Promise<Result<DiscordClient, unknown>> =>
         discordClient.once('ready', () => {
           discordClient.user
             ?.setActivity({
-              name: replyTriggerCommand,
+              name: `${rpReplyTriggerCommand},${gpReplyTriggerCommand},${gpReplyTriggerCommandRand}`,
               type: 'PLAYING',
             })
             .then(() => {
@@ -86,7 +90,7 @@ export const startDiscordListener = (
   });
 
   discordClient.on('message', (message) => {
-    sendPollMessage(databaseRef, psqlClient, message)
+    sendMessageMain(databaseRef, psqlClient, message)
       .then((result) => {
         if (Result.isErr(result)) {
           console.error('on message error:', result);

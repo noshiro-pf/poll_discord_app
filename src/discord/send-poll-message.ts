@@ -1,15 +1,29 @@
-import type { DeepReadonly } from '@noshiro/ts-utils';
+import type { DeepReadonly, uint32 } from '@noshiro/ts-utils';
 import { IMap, promiseToResult, Result, tuple } from '@noshiro/ts-utils';
 import type { DMChannel, Message, NewsChannel, TextChannel } from 'discord.js';
 import type { Client as PsqlClient } from 'pg';
-import { emojis, replyTriggerCommand } from '../constants';
-import { createSummaryMessage } from '../functions/create-summary-message';
+import {
+  emojis,
+  gpReplyTriggerCommand,
+  gpReplyTriggerCommandRand,
+  rpReplyTriggerCommand,
+} from '../constants';
+import {
+  gpCreateSummaryMessage,
+  rpCreateSummaryMessage,
+} from '../functions/create-summary-message';
 import { createTitleString } from '../functions/create-title-string';
-import { parseCommandArgument } from '../functions/parse-command';
+import { generateGroups } from '../functions/generate-groups';
+import {
+  gpParseGroupingCommandArgument,
+  gpParseRandCommandArgument,
+  rpParseCommandArgument,
+} from '../functions/parse-command';
 import { addPoll } from '../in-memory-database';
 import type { AnswerOfDate } from '../types/answer-of-date';
 import { defaultAnswerOfDate } from '../types/answer-of-date';
 import type { DateOption } from '../types/date-option';
+import type { Group } from '../types/group';
 import type {
   DatabaseRef,
   DateOptionId,
@@ -24,7 +38,7 @@ import {
   createTitleMessageId,
 } from '../types/types';
 
-const sendPollMessageSub = async (
+const rpSendPollMessageSub = async (
   messageChannel: DMChannel | NewsChannel | TextChannel,
   title: string,
   args: readonly string[]
@@ -61,7 +75,7 @@ const sendPollMessageSub = async (
   const dateOptionMessageList = dateOptionAndMessageListTemp.map(([, a]) => a);
   const dateOptions = dateOptionAndMessageListTemp.map(([a]) => a);
 
-  const summaryMessageEmbed = createSummaryMessage(
+  const summaryMessageEmbed = rpCreateSummaryMessage(
     {
       id: createPollId(''),
       updatedAt: createTimestamp(Date.now()),
@@ -106,27 +120,18 @@ const sendPollMessageSub = async (
   });
 };
 
-export const sendPollMessage = async (
+const rpSendPollMessage = async (
   databaseRef: DatabaseRef,
   // eslint-disable-next-line noshiro-custom/prefer-readonly-parameter-types
   psqlClient: PsqlClient,
-  message: Message
+  messageFilled: Message
 ): Promise<Result<undefined, unknown>> => {
-  const messageFilled: Message = message.partial
-    ? await message.fetch()
-    : message;
-
-  if (messageFilled.author.bot) return Result.ok(undefined);
-
-  if (!messageFilled.content.startsWith(`${replyTriggerCommand} `))
-    return Result.ok(undefined);
-
-  const [title, ...args] = parseCommandArgument(messageFilled.content);
+  const [title, ...args] = rpParseCommandArgument(messageFilled.content);
 
   if (title === undefined) return Result.ok(undefined);
   if (args.length === 0) return Result.ok(undefined);
 
-  const replySubResult = await sendPollMessageSub(
+  const replySubResult = await rpSendPollMessageSub(
     messageFilled.channel,
     title,
     args
@@ -160,4 +165,94 @@ export const sendPollMessage = async (
   );
 
   return addPollResult;
+};
+
+const gpSendGroupingMessageSub = async (
+  messageChannel: DMChannel | NewsChannel | TextChannel,
+  groups: readonly Group[]
+): Promise<Result<undefined, unknown>> => {
+  const summaryMessageResult = await promiseToResult(
+    messageChannel.send(gpCreateSummaryMessage(groups))
+  );
+
+  return Result.map(() => undefined)(summaryMessageResult);
+};
+
+const gpSendRandMessageSub = async (
+  messageChannel: DMChannel | NewsChannel | TextChannel,
+  n: uint32
+): Promise<Result<undefined, unknown>> => {
+  const summaryMessageResult = await promiseToResult(
+    messageChannel.send(Math.ceil(Math.random() * n))
+  );
+
+  return Result.map(() => undefined)(summaryMessageResult);
+};
+
+const gpSendGroupingMessage = async (
+  messageFilled: Message
+): Promise<Result<undefined, unknown>> => {
+  const parseResult = gpParseGroupingCommandArgument(
+    messageFilled.content.replace(
+      new RegExp(`^${gpReplyTriggerCommand} `, 'u'),
+      ''
+    )
+  );
+  if (Result.isErr(parseResult)) return Result.ok(undefined);
+  const [numGroups, nameList] = parseResult.value;
+
+  if (nameList.length === 0) return Result.ok(undefined);
+  if (nameList.length < numGroups) return Result.ok(undefined);
+
+  const replySubResult = await gpSendGroupingMessageSub(
+    messageFilled.channel,
+    generateGroups(numGroups, nameList)
+  );
+
+  return replySubResult;
+};
+
+const gpSendRandMessage = async (
+  messageFilled: Message
+): Promise<Result<undefined, unknown>> => {
+  const parseResult = gpParseRandCommandArgument(
+    messageFilled.content.replace(
+      new RegExp(`^${gpReplyTriggerCommandRand} `, 'u'),
+      ''
+    )
+  );
+
+  if (Result.isErr(parseResult)) return Result.ok(undefined);
+  const n = parseResult.value;
+
+  const replySubResult = await gpSendRandMessageSub(messageFilled.channel, n);
+
+  return replySubResult;
+};
+
+export const sendMessageMain = async (
+  databaseRef: DatabaseRef,
+  // eslint-disable-next-line noshiro-custom/prefer-readonly-parameter-types
+  psqlClient: PsqlClient,
+  message: Message
+): Promise<Result<undefined, unknown>> => {
+  const messageFilled: Message = message.partial
+    ? await message.fetch()
+    : message;
+
+  if (messageFilled.author.bot) return Result.ok(undefined);
+
+  if (messageFilled.content.startsWith(`${gpReplyTriggerCommand} `)) {
+    return gpSendGroupingMessage(messageFilled);
+  }
+
+  if (messageFilled.content.startsWith(`${gpReplyTriggerCommandRand} `)) {
+    return gpSendRandMessage(messageFilled);
+  }
+
+  if (messageFilled.content.startsWith(`${rpReplyTriggerCommand} `)) {
+    return rpSendPollMessage(databaseRef, psqlClient, messageFilled);
+  }
+
+  return Result.ok(undefined);
 };
