@@ -17,7 +17,8 @@
     "start": "node ./dist/index.js",
     "start:dev": "export NODE_ENV='development' && node ./dist/index.js",
     "test": "echo 'no test script'",
-    "heroku:bash": "heroku run bash -a poll-discord-app"
+    "heroku:bash": "heroku run bash --app poll-discord-app",
+    "heroku:logs": "heroku logs --tail --app poll-discord-app"
   },
   "dependencies": {
     "@noshiro/ts-utils": "1.0.26",
