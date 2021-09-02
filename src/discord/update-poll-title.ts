@@ -1,7 +1,7 @@
 import { IRecord, promiseToResult, Result } from '@noshiro/ts-utils';
 import type { Message, PartialMessage } from 'discord.js';
 import type { Client as PsqlClient } from 'pg';
-import { rpReplyTriggerCommand } from '../constants';
+import { triggerCommand } from '../constants';
 import { rpCreateSummaryMessage } from '../functions/create-summary-message';
 import { createTitleString } from '../functions/create-title-string';
 import { getUserIdsFromAnswers } from '../functions/get-user-ids-from-answers';
@@ -21,8 +21,13 @@ export const updatePollTitle = async (
 
   if (messageFilled.author.bot) return Result.ok(undefined);
 
-  if (!messageFilled.content.startsWith(`${rpReplyTriggerCommand} `))
+  if (
+    !messageFilled.content.startsWith(`${triggerCommand.rp} `) &&
+    !messageFilled.content.startsWith(`${triggerCommand.rp30} `) &&
+    !messageFilled.content.startsWith(`${triggerCommand.rp60} `)
+  ) {
     return Result.ok(undefined);
+  }
 
   const [title] = rpParseCommandArgument(messageFilled.content);
 

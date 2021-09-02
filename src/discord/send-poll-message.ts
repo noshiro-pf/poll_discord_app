@@ -2,12 +2,11 @@ import type { DeepReadonly, uint32 } from '@noshiro/ts-utils';
 import { IMap, promiseToResult, Result, tuple } from '@noshiro/ts-utils';
 import type { DMChannel, Message, NewsChannel, TextChannel } from 'discord.js';
 import type { Client as PsqlClient } from 'pg';
+import { emojis, triggerCommand } from '../constants';
 import {
-  emojis,
-  gpReplyTriggerCommand,
-  gpReplyTriggerCommandRand,
-  rpReplyTriggerCommand,
-} from '../constants';
+  convertRp30ArgsToRpArgs,
+  convertRp60ArgsToRpArgs,
+} from '../functions/convert-rp30-args-to-rp-args';
 import {
   gpCreateSummaryMessage,
   rpCreateSummaryMessage,
@@ -124,17 +123,18 @@ const rpSendPollMessage = async (
   databaseRef: DatabaseRef,
   // eslint-disable-next-line noshiro-custom/prefer-readonly-parameter-types
   psqlClient: PsqlClient,
-  messageFilled: Message
+  discordChannel: Message['channel'],
+  messageId: string,
+  title: string | undefined,
+  pollOptions: readonly string[]
 ): Promise<Result<undefined, unknown>> => {
-  const [title, ...args] = rpParseCommandArgument(messageFilled.content);
-
   if (title === undefined) return Result.ok(undefined);
-  if (args.length === 0) return Result.ok(undefined);
+  if (pollOptions.length === 0) return Result.ok(undefined);
 
   const replySubResult = await rpSendPollMessageSub(
-    messageFilled.channel,
+    discordChannel,
     title,
-    args
+    pollOptions
   );
   if (Result.isErr(replySubResult)) return replySubResult;
   const { summaryMessage, dateOptions, dateOptionMessageList, titleMessageId } =
@@ -153,7 +153,7 @@ const rpSendPollMessage = async (
       ),
       titleMessageId,
     },
-    createCommandMessageId(messageFilled.id)
+    createCommandMessageId(messageId)
   );
 
   await Promise.all(
@@ -193,10 +193,7 @@ const gpSendGroupingMessage = async (
   messageFilled: Message
 ): Promise<Result<undefined, unknown>> => {
   const parseResult = gpParseGroupingCommandArgument(
-    messageFilled.content.replace(
-      new RegExp(`^${gpReplyTriggerCommand} `, 'u'),
-      ''
-    )
+    messageFilled.content.replace(new RegExp(`^${triggerCommand.gp} `, 'u'), '')
   );
   if (Result.isErr(parseResult)) return Result.ok(undefined);
   const [numGroups, nameList] = parseResult.value;
@@ -217,7 +214,7 @@ const gpSendRandMessage = async (
 ): Promise<Result<undefined, unknown>> => {
   const parseResult = gpParseRandCommandArgument(
     messageFilled.content.replace(
-      new RegExp(`^${gpReplyTriggerCommandRand} `, 'u'),
+      new RegExp(`^${triggerCommand.rand} `, 'u'),
       ''
     )
   );
@@ -242,16 +239,52 @@ export const sendMessageMain = async (
 
   if (messageFilled.author.bot) return Result.ok(undefined);
 
-  if (messageFilled.content.startsWith(`${gpReplyTriggerCommand} `)) {
+  if (messageFilled.content.startsWith(`${triggerCommand.gp} `)) {
     return gpSendGroupingMessage(messageFilled);
   }
 
-  if (messageFilled.content.startsWith(`${gpReplyTriggerCommandRand} `)) {
+  if (messageFilled.content.startsWith(`${triggerCommand.rand} `)) {
     return gpSendRandMessage(messageFilled);
   }
 
-  if (messageFilled.content.startsWith(`${rpReplyTriggerCommand} `)) {
-    return rpSendPollMessage(databaseRef, psqlClient, messageFilled);
+  if (messageFilled.content.startsWith(`${triggerCommand.rp} `)) {
+    const [title, ...args] = rpParseCommandArgument(messageFilled.content);
+    return rpSendPollMessage(
+      databaseRef,
+      psqlClient,
+      messageFilled.channel,
+      messageFilled.id,
+      title,
+      args
+    );
+  }
+
+  if (messageFilled.content.startsWith(`${triggerCommand.rp30} `)) {
+    const [title, ...args] = rpParseCommandArgument(messageFilled.content);
+    const argsConverted = convertRp30ArgsToRpArgs(args);
+    if (Result.isErr(argsConverted)) return argsConverted;
+    return rpSendPollMessage(
+      databaseRef,
+      psqlClient,
+      messageFilled.channel,
+      messageFilled.id,
+      title,
+      argsConverted.value
+    );
+  }
+
+  if (messageFilled.content.startsWith(`${triggerCommand.rp60} `)) {
+    const [title, ...args] = rpParseCommandArgument(messageFilled.content);
+    const argsConverted = convertRp60ArgsToRpArgs(args);
+    if (Result.isErr(argsConverted)) return argsConverted;
+    return rpSendPollMessage(
+      databaseRef,
+      psqlClient,
+      messageFilled.channel,
+      messageFilled.id,
+      title,
+      argsConverted.value
+    );
   }
 
   return Result.ok(undefined);

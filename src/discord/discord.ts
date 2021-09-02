@@ -1,11 +1,7 @@
 import { promiseToResult, Result } from '@noshiro/ts-utils';
 import { Client as DiscordClient } from 'discord.js';
 import type { Client as PsqlClient } from 'pg';
-import {
-  gpReplyTriggerCommand,
-  gpReplyTriggerCommandRand,
-  rpReplyTriggerCommand,
-} from '../constants';
+import { triggerCommand } from '../constants';
 import { DISCORD_TOKEN } from '../env';
 import type { DatabaseRef } from '../types/types';
 import { onMessageReactionAdd, onMessageReactionRemove } from './reaction';
@@ -23,7 +19,7 @@ export const initDiscordClient = (): Promise<Result<DiscordClient, unknown>> =>
         discordClient.once('ready', () => {
           discordClient.user
             ?.setActivity({
-              name: `${rpReplyTriggerCommand},${gpReplyTriggerCommand},${gpReplyTriggerCommandRand}`,
+              name: `${triggerCommand.rp},${triggerCommand.rp30},${triggerCommand.rp60},${triggerCommand.gp},${triggerCommand.rand}`,
               type: 'PLAYING',
             })
             .then(() => {

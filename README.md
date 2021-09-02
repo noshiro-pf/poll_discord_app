@@ -4,7 +4,7 @@
 
 ### Rich Poll
 
-```
+```txt
 /rp "test"
 "15:00-16:00"
 "16:00-17:00"
@@ -21,11 +21,25 @@
 "24:00-24:30"
 ```
 
-(Use `/rpdev` instead of`/rp` in the development environment)
+(Use `/rpdev` instead of `/rp` in the development environment)
+
+#### Shorthand
+
+```txt
+/rp30 "test" "15" "25"
+```
+
+or
+
+```txt
+/rp60 "test" "15" "25"
+```
+
+(Use `/rp30dev` , `/rp60dev` instead of `/rp30` , `/rp60` respectively in the development environment)
 
 ### Grouping
 
-```
+```txt
 /gp 2
 "Alice"
 "Bob"
@@ -35,24 +49,24 @@
 "Frank"
 ```
 
-(Use `/gpdev` instead of`/gp` in the development environment)
+(Use `/gpdev` instead of `/gp` in the development environment)
 
 result
 
-```
+```txt
 1. "Alice" "Dave" "Frank"
 2. "Bob" "Carol" "Ellen"
 ```
 
 ### Rand
 
-```
+```txt
 /rand 3
 ```
 
 result
 
-```
+```txt
 2
 ```
 

@@ -1,8 +1,12 @@
 import { isDev } from './env';
 
-export const rpReplyTriggerCommand = isDev ? '/rpdev' : '/rp';
-export const gpReplyTriggerCommand = isDev ? '/gpdev' : '/gp';
-export const gpReplyTriggerCommandRand = isDev ? '/randdev' : '/rand';
+export const triggerCommand = {
+  rp: isDev ? '/rpdev' : '/rp',
+  rp30: isDev ? '/rp30dev' : '/rp30',
+  rp60: isDev ? '/rp60dev' : '/rp60',
+  gp: isDev ? '/gpdev' : '/gp',
+  rand: isDev ? '/randdev' : '/rand',
+} as const;
 
 export const emojis = {
   ok: { unicode: '⭕', name: ':o:' },
