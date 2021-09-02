@@ -40,7 +40,7 @@ const validateArgs = (
     );
   }
 
-  return Result.ok([arg1AsNumber, arg2AsNumber]);
+  return Result.ok([arg1AsNumber, arg2AsNumber] as const);
 };
 
 /** @description ショートカットコマンド `/rp60` の引数を /rp コマンドの引数に変換する */
