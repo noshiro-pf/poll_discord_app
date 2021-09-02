@@ -29,17 +29,17 @@
   },
   "devDependencies": {
     "@types/eslint": "^7.28.0",
-    "@types/pg": "^7.14.11",
-    "@typescript-eslint/eslint-plugin": "^4.26.0",
-    "@typescript-eslint/parser": "^4.26.0",
-    "eslint": "^7.25.0",
+    "@types/pg": "^8.6.1",
+    "@typescript-eslint/eslint-plugin": "^4.30.0",
+    "@typescript-eslint/parser": "^4.30.0",
+    "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
-    "eslint-plugin-import": "^2.22.1",
-    "eslint-plugin-noshiro-custom": "1.0.1",
+    "eslint-plugin-import": "^2.24.2",
+    "eslint-plugin-noshiro-custom": "^1.0.1",
     "prettier": "^2.3.2",
-    "prettier-plugin-organize-imports": "^2.1.0",
-    "prettier-plugin-packagejson": "^2.2.10",
-    "typescript": "^4.3.2"
+    "prettier-plugin-organize-imports": "^2.3.3",
+    "prettier-plugin-packagejson": "^2.2.11",
+    "typescript": "^4.4.2"
   },
   "engines": {
     "node": ">=12.x.x"
