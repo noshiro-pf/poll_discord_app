@@ -5,7 +5,7 @@ import { triggerCommand } from '../constants';
 import { rpCreateSummaryMessage } from '../functions/create-summary-message';
 import { createTitleString } from '../functions/create-title-string';
 import { getUserIdsFromAnswers } from '../functions/get-user-ids-from-answers';
-import { rpParseCommandArgument } from '../functions/parse-command';
+import { rpParseCommand } from '../functions/parse-command';
 import { createUserIdToDisplayNameMap } from '../functions/user-id-to-display-name';
 import type { DatabaseRef } from '../types/types';
 import { createCommandMessageId } from '../types/types';
@@ -29,7 +29,7 @@ export const updatePollTitle = async (
     return Result.ok(undefined);
   }
 
-  const [title] = rpParseCommandArgument(messageFilled.content);
+  const [title] = rpParseCommand(messageFilled.content);
 
   if (title === undefined) return Result.ok(undefined);
 

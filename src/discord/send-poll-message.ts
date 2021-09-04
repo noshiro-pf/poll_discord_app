@@ -4,8 +4,8 @@ import type { DMChannel, Message, NewsChannel, TextChannel } from 'discord.js';
 import type { Client as PsqlClient } from 'pg';
 import { emojis, triggerCommand } from '../constants';
 import {
-  convertRp30ArgsToRpArgs,
-  convertRp60ArgsToRpArgs,
+  convertRp30ArgToRpArgs,
+  convertRp60ArgToRpArgs,
 } from '../functions/convert-rp30-args-to-rp-args';
 import {
   gpCreateSummaryMessage,
@@ -16,8 +16,9 @@ import { generateGroups } from '../functions/generate-groups';
 import {
   gpParseGroupingCommandArgument,
   gpParseRandCommandArgument,
-  rpParseCommandArgument,
+  rpParseCommand,
 } from '../functions/parse-command';
+import { removeCommandPrefix } from '../functions/remove-command-prefix';
 import { addPoll } from '../in-memory-database';
 import type { AnswerOfDate } from '../types/answer-of-date';
 import { defaultAnswerOfDate } from '../types/answer-of-date';
@@ -193,7 +194,7 @@ const gpSendGroupingMessage = async (
   messageFilled: Message
 ): Promise<Result<undefined, unknown>> => {
   const parseResult = gpParseGroupingCommandArgument(
-    messageFilled.content.replace(new RegExp(`^${triggerCommand.gp} `, 'u'), '')
+    removeCommandPrefix(messageFilled.content, triggerCommand.gp)
   );
   if (Result.isErr(parseResult)) return Result.ok(undefined);
   const [numGroups, nameList] = parseResult.value;
@@ -213,10 +214,7 @@ const gpSendRandMessage = async (
   messageFilled: Message
 ): Promise<Result<undefined, unknown>> => {
   const parseResult = gpParseRandCommandArgument(
-    messageFilled.content.replace(
-      new RegExp(`^${triggerCommand.rand} `, 'u'),
-      ''
-    )
+    removeCommandPrefix(messageFilled.content, triggerCommand.rand)
   );
 
   if (Result.isErr(parseResult)) return Result.ok(undefined);
@@ -248,7 +246,7 @@ export const sendMessageMain = async (
   }
 
   if (messageFilled.content.startsWith(`${triggerCommand.rp} `)) {
-    const [title, ...args] = rpParseCommandArgument(messageFilled.content);
+    const [title, ...args] = rpParseCommand(messageFilled.content);
     return rpSendPollMessage(
       databaseRef,
       psqlClient,
@@ -260,30 +258,36 @@ export const sendMessageMain = async (
   }
 
   if (messageFilled.content.startsWith(`${triggerCommand.rp30} `)) {
-    const [title, ...args] = rpParseCommandArgument(messageFilled.content);
-    const argsConverted = convertRp30ArgsToRpArgs(args);
-    if (Result.isErr(argsConverted)) return argsConverted;
+    const res = convertRp30ArgToRpArgs(
+      removeCommandPrefix(messageFilled.content, triggerCommand.rp30)
+    );
+
+    if (Result.isErr(res)) return res;
+
     return rpSendPollMessage(
       databaseRef,
       psqlClient,
       messageFilled.channel,
       messageFilled.id,
-      title,
-      argsConverted.value
+      res.value.title,
+      res.value.args
     );
   }
 
   if (messageFilled.content.startsWith(`${triggerCommand.rp60} `)) {
-    const [title, ...args] = rpParseCommandArgument(messageFilled.content);
-    const argsConverted = convertRp60ArgsToRpArgs(args);
-    if (Result.isErr(argsConverted)) return argsConverted;
+    const res = convertRp60ArgToRpArgs(
+      removeCommandPrefix(messageFilled.content, triggerCommand.rp60)
+    );
+
+    if (Result.isErr(res)) return res;
+
     return rpSendPollMessage(
       databaseRef,
       psqlClient,
       messageFilled.channel,
       messageFilled.id,
-      title,
-      argsConverted.value
+      res.value.title,
+      res.value.args
     );
   }
 
