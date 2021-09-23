@@ -22,9 +22,7 @@ export const rpCreateSummaryField = (
     );
   }
   if (
-    (answerOfDate.ok.size as number) +
-      (answerOfDate.neither.size as number) +
-      (answerOfDate.ng.size as number) ===
+    answerOfDate.ok.size + answerOfDate.neither.size + answerOfDate.ng.size ===
     0
   ) {
     return rpFormatEmbedFieldData(
