@@ -1,4 +1,3 @@
-import type { DeepReadonly, Writable } from '@noshiro/ts-utils';
 import { IMap, promiseToResult, Result } from '@noshiro/ts-utils';
 import type { Collection, Guild, GuildMember } from 'discord.js';
 import type { UserId } from '../types/types';

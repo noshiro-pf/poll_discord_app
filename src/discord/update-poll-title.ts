@@ -74,11 +74,12 @@ export const updatePollTitle = async (
       ),
     ]);
 
-  if (updateSummaryMessageResult === undefined) return Result.ok(undefined);
-  if (Result.isErr(updateSummaryMessageResult))
+  if (Result.isErr(updateSummaryMessageResult)) {
     return updateSummaryMessageResult;
-  if (updateTitleMessageResult === undefined) return Result.ok(undefined);
-  if (Result.isErr(updateTitleMessageResult)) return updateTitleMessageResult;
+  }
+  if (Result.isErr(updateTitleMessageResult)) {
+    return updateTitleMessageResult;
+  }
 
-  return fixAnswerAndUpdateMessage(databaseRef, psqlClient, messages, poll);
+  return fixAnswerAndUpdateMessage(databaseRef, psqlClient, messages, newPoll);
 };

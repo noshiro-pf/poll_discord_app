@@ -1,4 +1,3 @@
-import type { JsonType } from '@noshiro/ts-utils';
 import { promiseToResult, Result } from '@noshiro/ts-utils';
 import { Client as PsqlClient } from 'pg';
 import { psqlRowId, psqlRowType, psqlTableName } from './constants';
@@ -9,7 +8,8 @@ const isTruthy = (a: unknown): boolean => Boolean(a);
 
 export namespace psql {
   export const setTlsRejectUnauthorized0 = (): void => {
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    // eslint-disable-next-line @typescript-eslint/dot-notation
+    process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
   };
 
   export const initClient = async (
@@ -28,7 +28,7 @@ export namespace psql {
   export const getJsonData = (
     // eslint-disable-next-line noshiro-custom/prefer-readonly-parameter-types
     psqlClient: PsqlClient
-  ): Promise<Result<PsqlRow, unknown>> => {
+  ): Promise<Result<PsqlRow, Error>> => {
     const query = `select * from ${psqlTableName};`;
     return new Promise((resolve) => {
       psqlClient.query(query, (error, res) => {
@@ -44,8 +44,8 @@ export namespace psql {
   export const setJsonData = (
     // eslint-disable-next-line noshiro-custom/prefer-readonly-parameter-types
     psqlClient: PsqlClient,
-    jsonData: JsonType
-  ): Promise<Result<undefined, unknown>> => {
+    jsonData: JSONType
+  ): Promise<Result<undefined, ReadonlyJSONValue>> => {
     const query = `update ${psqlTableName} SET ${
       psqlRowType.data
     } = '${JSON.stringify(jsonData)}', ${
@@ -54,7 +54,7 @@ export namespace psql {
     return new Promise((resolve) => {
       psqlClient.query(query, (error) => {
         if (isTruthy(error)) {
-          resolve(Result.err(error));
+          resolve(Result.err(error as unknown as ReadonlyJSONValue));
         } else {
           resolve(Result.ok(undefined));
         }
@@ -88,9 +88,14 @@ export namespace psql {
   ): Promise<Result<undefined, unknown>> => {
     const query = `insert into ${psqlTableName} ( ${psqlRowType.data}, ${
       psqlRowType.updated_at
-    }, ${psqlRowType.id} ) values ( '${JSON.stringify(
-      defaultDatabase
-    )}', current_timestamp, '${recordId}' );`;
+    }, ${psqlRowType.id} ) values ( '${JSON.stringify({
+      polls: defaultDatabase.polls.toEntriesArray() as unknown as Readonly<
+        Record<string, never>
+      >[], // TODO
+      dateToPollIdMap: defaultDatabase.dateToPollIdMap.toEntriesArray(),
+      commandMessageIdToPollIdMap:
+        defaultDatabase.commandMessageIdToPollIdMap.toEntriesArray(),
+    })}', current_timestamp, '${recordId}' );`;
     return new Promise((resolve) => {
       psqlClient.query(query, (error) => {
         if (isTruthy(error)) {

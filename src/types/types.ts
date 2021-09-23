@@ -1,4 +1,3 @@
-import type { JsonType } from '@noshiro/ts-utils';
 import type { psqlRowType } from '../constants';
 import type { Database } from './database';
 
@@ -26,6 +25,6 @@ export type DatabaseRef = { db: Database };
 
 export type PsqlRow = {
   [psqlRowType.id]: string;
-  [psqlRowType.data]: JsonType;
+  [psqlRowType.data]: JSONType;
   [psqlRowType.updated_at]: string;
 };

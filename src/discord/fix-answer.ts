@@ -1,4 +1,3 @@
-import type { DeepReadonly } from '@noshiro/ts-utils';
 import {
   IRecord,
   ISet,
@@ -27,14 +26,17 @@ export const fixAnswerAndUpdateMessage = async (
   messages: Collection<string, Message>,
   poll: Poll
 ): Promise<Result<undefined, string>> => {
-  const dateOptionMessages: DeepReadonly<[string, Message][]> = poll.dateOptions
-    .map((dateOption) =>
-      ituple(
-        dateOption.id,
-        messages.find((m) => m.id === dateOption.id)
+  const dateOptionMessages: readonly (readonly [string, Message])[] =
+    poll.dateOptions
+      .map((dateOption) =>
+        ituple(
+          dateOption.id,
+          messages.find((m) => m.id === dateOption.id)
+        )
       )
-    )
-    .filter((a): a is [DateOptionId, Message] => isNotUndefined(a[1]));
+      .filter((a): a is readonly [DateOptionId, Message] =>
+        isNotUndefined(a[1])
+      );
 
   const dateOptionMessagesFilled = await Promise.all(
     dateOptionMessages.map(([dateId, msg]) =>

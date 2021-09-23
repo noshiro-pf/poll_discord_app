@@ -49,7 +49,7 @@ const onRefreshClick = async (
   if (result.some(Result.isErr)) {
     return Result.err(
       JSON.stringify(
-        result.map((a) => a.value),
+        result.map((a) => a.value) as ReadonlyJSONValue,
         undefined,
         2
       )
@@ -69,7 +69,7 @@ export const onMessageReactCommon = async (
   }>,
   reaction: MessageReaction,
   user: PartialUser | User
-): Promise<Result<undefined, unknown>> => {
+): Promise<Result<undefined, string>> => {
   const reactionFilled: MessageReaction = reaction.partial
     ? await reaction.fetch()
     : reaction;
@@ -111,12 +111,16 @@ export const onMessageReactCommon = async (
 
   const userIdToDisplayName = userIdToDisplayNameResult.value;
 
-  const result = await promiseToResult(
-    messages
-      .find((m) => m.id === resultPoll.id)
-      ?.edit(rpCreateSummaryMessage(resultPoll, userIdToDisplayName))
-      .then(() => undefined) ??
-      Promise.reject(Result.err(`message with id ${resultPoll.id} not found`))
+  const message = messages.find((m) => m.id === resultPoll.id);
+
+  if (message === undefined) {
+    return Result.err(`message with id ${resultPoll.id} not found`);
+  }
+
+  const result = await promiseToResult<undefined, string>(
+    message
+      .edit(rpCreateSummaryMessage(resultPoll, userIdToDisplayName))
+      .then(() => undefined)
   );
 
   return result;

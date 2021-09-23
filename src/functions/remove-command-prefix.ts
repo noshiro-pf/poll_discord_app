@@ -1,4 +1,3 @@
-import type { ValueOf } from '@noshiro/ts-utils';
 import type { triggerCommand } from '../constants';
 
 export const removeCommandPrefix = (

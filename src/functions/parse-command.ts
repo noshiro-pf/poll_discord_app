@@ -1,4 +1,3 @@
-import type { uint32 } from '@noshiro/ts-utils';
 import { isInRange, isUint32, isUndefined, Result } from '@noshiro/ts-utils';
 import type { NumGroups } from '../types/group';
 import { maxNumGroups } from '../types/group';
@@ -12,7 +11,7 @@ export const rpParseCommand = (command: string): readonly string[] =>
 export const rp3060ParseCommand = (
   commandArguments: string, // "9月4日 (土)" 15  25
   functionName: 'convertRp30ArgsToRpArgs' | 'convertRp60ArgsToRpArgs'
-): Result<readonly [string, uint32, uint32], string> => {
+): Result<readonly [string, number, number], string> => {
   const regexResult =
     /\s*"(?<title>.*)"\s+"?(?<begin>[0-9]{1,2})"?\s+"?(?<end>[0-9]{1,2})"?/u.exec(
       commandArguments
@@ -71,10 +70,10 @@ export const gpParseGroupingCommandArgument = (
 
 export const gpParseRandCommandArgument = (
   commandArguments: string
-): Result<uint32, undefined> => {
+): Result<number, undefined> => {
   const n = parseInt(commandArguments, 10);
   if (Number.isNaN(n)) return Result.err(undefined);
   if (n < 2 || !Number.isSafeInteger(n)) return Result.err(undefined);
 
-  return Result.ok(n as uint32);
+  return Result.ok(n);
 };

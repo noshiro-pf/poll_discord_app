@@ -1,4 +1,3 @@
-import type { DeepReadonly, uint32 } from '@noshiro/ts-utils';
 import { IMap, promiseToResult, Result, tuple } from '@noshiro/ts-utils';
 import type { DMChannel, Message, NewsChannel, TextChannel } from 'discord.js';
 import type { Client as PsqlClient } from 'pg';
@@ -44,9 +43,9 @@ const rpSendPollMessageSub = async (
   args: readonly string[]
 ): Promise<
   Result<
-    DeepReadonly<{
-      dateOptions: DateOption[];
-      dateOptionMessageList: Message[];
+    Readonly<{
+      dateOptions: readonly DateOption[];
+      dateOptionMessageList: readonly Message[];
       summaryMessage: Message;
       titleMessageId: TitleMessageId;
     }>,
@@ -56,7 +55,7 @@ const rpSendPollMessageSub = async (
   const titleMessage = await messageChannel.send(createTitleString(title));
   const titleMessageId = createTitleMessageId(titleMessage.id);
 
-  const dateOptionAndMessageListTemp: [DateOption, Message][] = [];
+  const dateOptionAndMessageListTemp: (readonly [DateOption, Message])[] = [];
 
   for (const el of args) {
     // eslint-disable-next-line no-await-in-loop
@@ -181,7 +180,7 @@ const gpSendGroupingMessageSub = async (
 
 const gpSendRandMessageSub = async (
   messageChannel: DMChannel | NewsChannel | TextChannel,
-  n: uint32
+  n: number
 ): Promise<Result<undefined, unknown>> => {
   const summaryMessageResult = await promiseToResult(
     messageChannel.send(Math.ceil(Math.random() * n))

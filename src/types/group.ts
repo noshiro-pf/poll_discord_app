@@ -1,4 +1,4 @@
-import type { DeepReadonly, UpperAlphabet } from '@noshiro/ts-utils';
+import type { UpperAlphabet } from '@noshiro/ts-utils';
 
 export type Group = DeepReadonly<{
   no: UpperAlphabet;

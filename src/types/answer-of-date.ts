@@ -1,4 +1,3 @@
-import type { DeepReadonly, JsonType, TypeExtends } from '@noshiro/ts-utils';
 import { assertType, ISet, mapNullable, pipe } from '@noshiro/ts-utils';
 import type { UserId } from './types';
 
@@ -14,7 +13,7 @@ export type AnswerOfDateJson = DeepReadonly<{
   neither: string[];
 }>;
 
-assertType<TypeExtends<AnswerOfDateJson, JsonType>>();
+assertType<TypeExtends<AnswerOfDateJson, JSONType>>();
 
 export type PartialAnswerOfDateJson = Partial<
   DeepReadonly<{

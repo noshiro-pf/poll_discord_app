@@ -1,4 +1,5 @@
 import type { IMap } from '@noshiro/ts-utils';
+import { castWritable } from '@noshiro/ts-utils';
 import type { EmbedFieldData } from 'discord.js';
 import { MessageEmbed } from 'discord.js';
 import { embedMessageColor, footerText } from '../constants';
@@ -17,14 +18,14 @@ export const rpCreateSummaryMessage = (
   new MessageEmbed()
     .setColor(embedMessageColor)
     .setTitle(`Collected Results for "${poll.title}"`)
-    .addFields(rpCreateSummaryFields(poll, userIdToDisplayName))
+    .addFields(castWritable(rpCreateSummaryFields(poll, userIdToDisplayName)))
     .setFooter(footerText)
     .setTimestamp();
 
 const rpCreateSummaryFields = (
   poll: Poll,
   userIdToDisplayName: IMap<UserId, string>
-): EmbedFieldData[] =>
+): readonly EmbedFieldData[] =>
   poll.dateOptions.map((d) =>
     rpCreateSummaryField(d, poll, userIdToDisplayName)
   );
@@ -34,7 +35,7 @@ export const gpCreateSummaryMessage = (
 ): MessageEmbed =>
   new MessageEmbed()
     .setColor(embedMessageColor)
-    .addFields(gpCreateFields(groups));
+    .addFields(castWritable(gpCreateFields(groups)));
 
-const gpCreateFields = (groups: readonly Group[]): EmbedFieldData[] =>
+const gpCreateFields = (groups: readonly Group[]): readonly EmbedFieldData[] =>
   groups.map(gpCreateSummaryField);

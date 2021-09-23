@@ -1,4 +1,4 @@
-import { IRecord, pipe, Result } from '@noshiro/ts-utils';
+import { IRecord, isNonNullObject, pipe, Result } from '@noshiro/ts-utils';
 import type { Client as PsqlClient } from 'pg';
 import { psqlRowType } from './constants';
 import { psql } from './postgre-sql';
@@ -25,7 +25,7 @@ export const addPoll = (
   psqlClient: PsqlClient,
   poll: Poll,
   messageId: CommandMessageId
-): Promise<Result<undefined, unknown>> =>
+): Promise<Result<undefined, ReadonlyJSONValue>> =>
   setDatabase(
     ref,
     psqlClient,
@@ -56,7 +56,7 @@ export const updatePoll = (
   // eslint-disable-next-line noshiro-custom/prefer-readonly-parameter-types
   psqlClient: PsqlClient,
   poll: Poll
-): Promise<Result<undefined, unknown>> =>
+): Promise<Result<undefined, ReadonlyJSONValue>> =>
   setDatabase(
     ref,
     psqlClient,
@@ -66,7 +66,7 @@ export const updatePoll = (
 export const getPollByDateId = (
   ref: DatabaseRef,
   dateOptionId: DateOptionId
-): Result<Poll, unknown> => {
+): Result<Poll, string> => {
   const pollId = ref.db.dateToPollIdMap.get(dateOptionId);
   if (pollId === undefined) {
     return Result.err(`pollId for "${dateOptionId}" not found.`);
@@ -86,9 +86,9 @@ export const updateVote = async (
   dateOptionId: DateOptionId,
   userId: UserId,
   action: Readonly<{ type: 'add' | 'remove'; value: AnswerType }>
-): Promise<Result<Poll, unknown>> => {
+): Promise<Result<Poll, string>> => {
   const pollResult = getPollByDateId(ref, dateOptionId);
-  if (Result.isErr(pollResult)) return Result.err(undefined);
+  if (Result.isErr(pollResult)) return Result.err('');
   const curr = pollResult.value;
 
   const next = pipe(curr)
@@ -127,16 +127,14 @@ export const updateVote = async (
 };
 
 const databaseFromJson = (dbJson: unknown): Database =>
-  typeof dbJson !== 'object' || dbJson === null
-    ? defaultDatabase
-    : fillDatabase(dbJson);
+  isNonNullObject(dbJson) ? fillDatabase(dbJson) : defaultDatabase;
 
 const setDatabase = (
   ref: DatabaseRef,
   // eslint-disable-next-line noshiro-custom/prefer-readonly-parameter-types
   psqlClient: PsqlClient,
   next: Database
-): Promise<Result<undefined, unknown>> => {
+): Promise<Result<undefined, ReadonlyJSONValue>> => {
   ref.db = next;
   return psql.setJsonData(psqlClient, databaseToJson(next));
 };
@@ -145,7 +143,7 @@ export const initializeInMemoryDatabase = async (
   ref: DatabaseRef,
   // eslint-disable-next-line noshiro-custom/prefer-readonly-parameter-types
   psqlClient: PsqlClient
-): Promise<Result<undefined, unknown>> => {
+): Promise<Result<undefined, Error>> => {
   const res = await psql.getJsonData(psqlClient);
   if (Result.isErr(res)) return res;
 

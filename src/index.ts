@@ -1,3 +1,10 @@
+/* eslint-disable @typescript-eslint/triple-slash-reference */
+
+/// <reference no-default-lib="true"/>
+/// <reference path="./stdlib/lib.dom.d.ts" />
+/// <reference path="./stdlib/lib.esnext.d.ts" />
+/// <reference path="./stdlib/utils.d.ts" />
+
 import { Result } from '@noshiro/ts-utils';
 import { psqlRowId } from './constants';
 import { initDiscordClient, startDiscordListener } from './discord/discord';

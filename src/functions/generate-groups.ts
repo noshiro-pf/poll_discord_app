@@ -1,4 +1,3 @@
-import type { uint32 } from '@noshiro/ts-utils';
 import {
   getAlphabets,
   IList,
@@ -12,7 +11,7 @@ export const generateGroups = (
   numGroups: NumGroups,
   nameList: readonly string[]
 ): readonly Group[] => {
-  const nameListWithRand: readonly (readonly [string, uint32, number])[] = pipe(
+  const nameListWithRand: DeepReadonly<[string, number, number][]> = pipe(
     nameList
   )
     .chain((list) => IList.map(list, (n, i) => ituple(n, i, Math.random())))

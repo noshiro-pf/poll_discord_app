@@ -1,4 +1,3 @@
-import type { DeepReadonly, JsonType, TypeExtends } from '@noshiro/ts-utils';
 import {
   assertType,
   IMap,
@@ -41,7 +40,7 @@ export type PollJson = DeepReadonly<{
   titleMessageId: TitleMessageId;
 }>;
 
-assertType<TypeExtends<PollJson, JsonType>>();
+assertType<TypeExtends<PollJson, JSONType>>();
 
 export type PartialPollJson = Partial<
   DeepReadonly<{

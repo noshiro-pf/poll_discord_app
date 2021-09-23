@@ -21,7 +21,7 @@
     "heroku:logs": "heroku logs --tail --app poll-discord-app"
   },
   "dependencies": {
-    "@noshiro/ts-utils": "1.0.26",
+    "@noshiro/ts-utils": "1.1.1",
     "discord.js": "^12.5.1",
     "dotenv": "^8.2.0",
     "pg": "^8.5.1",

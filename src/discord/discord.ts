@@ -15,7 +15,7 @@ export const initDiscordClient = (): Promise<Result<DiscordClient, unknown>> =>
     });
 
     Promise.all([
-      new Promise<Result<undefined, undefined>>((resolve) => {
+      new Promise<Result<undefined, unknown>>((resolve) => {
         discordClient.once('ready', () => {
           discordClient.user
             ?.setActivity({
