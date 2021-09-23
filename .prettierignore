@@ -27,3 +27,4 @@ dotenv-example
 .prettierignore
 .editorconfig
 .vscodeignore
+*.d.ts
