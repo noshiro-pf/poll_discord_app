@@ -19,7 +19,15 @@ export const initDiscordClient = (): Promise<Result<DiscordClient, unknown>> =>
         discordClient.once('ready', () => {
           discordClient.user
             ?.setActivity({
-              name: `${triggerCommand.rp},${triggerCommand.rp30},${triggerCommand.rp60},${triggerCommand.gp},${triggerCommand.rand}`,
+              name: [
+                triggerCommand.rp30,
+                triggerCommand.rp60,
+                triggerCommand.rp30d,
+                triggerCommand.rp60d,
+                triggerCommand.rp,
+                triggerCommand.gp,
+                triggerCommand.rand,
+              ].join(','),
               type: 'PLAYING',
             })
             .then(() => {

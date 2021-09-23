@@ -4,7 +4,9 @@ import type { Client as PsqlClient } from 'pg';
 import { emojis, triggerCommand } from '../constants';
 import {
   convertRp30ArgToRpArgs,
+  convertRp30dArgToRpArgs,
   convertRp60ArgToRpArgs,
+  convertRp60dArgToRpArgs,
 } from '../functions/convert-rp30-args-to-rp-args';
 import {
   gpCreateSummaryMessage,
@@ -276,6 +278,40 @@ export const sendMessageMain = async (
   if (messageFilled.content.startsWith(`${triggerCommand.rp60} `)) {
     const res = convertRp60ArgToRpArgs(
       removeCommandPrefix(messageFilled.content, triggerCommand.rp60)
+    );
+
+    if (Result.isErr(res)) return res;
+
+    return rpSendPollMessage(
+      databaseRef,
+      psqlClient,
+      messageFilled.channel,
+      messageFilled.id,
+      res.value.title,
+      res.value.args
+    );
+  }
+
+  if (messageFilled.content.startsWith(`${triggerCommand.rp30d} `)) {
+    const res = convertRp30dArgToRpArgs(
+      removeCommandPrefix(messageFilled.content, triggerCommand.rp30d)
+    );
+
+    if (Result.isErr(res)) return res;
+
+    return rpSendPollMessage(
+      databaseRef,
+      psqlClient,
+      messageFilled.channel,
+      messageFilled.id,
+      res.value.title,
+      res.value.args
+    );
+  }
+
+  if (messageFilled.content.startsWith(`${triggerCommand.rp60d} `)) {
+    const res = convertRp60dArgToRpArgs(
+      removeCommandPrefix(messageFilled.content, triggerCommand.rp60d)
     );
 
     if (Result.isErr(res)) return res;

@@ -4,6 +4,8 @@ export const triggerCommand = {
   rp: isDev ? '/rpdev' : '/rp',
   rp30: isDev ? '/rp30dev' : '/rp30',
   rp60: isDev ? '/rp60dev' : '/rp60',
+  rp30d: isDev ? '/rp30ddev' : '/rp30d',
+  rp60d: isDev ? '/rp60ddev' : '/rp60d',
   gp: isDev ? '/gpdev' : '/gp',
   rand: isDev ? '/randdev' : '/rand',
 } as const;
