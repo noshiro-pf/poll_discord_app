@@ -5,7 +5,6 @@ import {
   IList,
   pipe,
   Result,
-  today,
   weekdaysList,
 } from '@noshiro/ts-utils';
 import { rp3060dParseCommand, rp3060ParseCommand } from './parse-command';
@@ -48,7 +47,8 @@ export const convertRp60ArgToRpArgs = (
 
 /** @description ショートカットコマンド `/rp30d` の引数を /rp コマンドの引数に変換する */
 export const convertRp60dArgToRpArgs = (
-  commandArguments: string
+  commandArguments: string,
+  timestamp: number
 ): Result<
   Readonly<{ title: string | undefined; args: readonly string[] }>,
   string
@@ -59,7 +59,7 @@ export const convertRp60dArgToRpArgs = (
 
   const [arg1AsNumber, arg2AsNumber] = res.value;
 
-  const td = today();
+  const td = new Date(timestamp);
   const title = `${getMonth(td)}/${getDate(td)}（${
     weekdaysList.jp[getDay(td)].abbr
   }）`;
@@ -105,7 +105,8 @@ export const convertRp30ArgToRpArgs = (
 
 /** @description ショートカットコマンド `/rp30d` の引数を /rp コマンドの引数に変換する */
 export const convertRp30dArgToRpArgs = (
-  commandArguments: string
+  commandArguments: string,
+  timestamp: number
 ): Result<
   Readonly<{ title: string | undefined; args: readonly string[] }>,
   string
@@ -116,7 +117,7 @@ export const convertRp30dArgToRpArgs = (
 
   const [arg1AsNumber, arg2AsNumber] = res.value;
 
-  const td = today();
+  const td = new Date(timestamp);
   const title = `${getMonth(td)}/${getDate(td)}（${
     weekdaysList.jp[getDay(td)].abbr
   }）`;
