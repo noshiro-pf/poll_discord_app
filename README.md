@@ -66,3 +66,9 @@ result
 - setup PostgreSQL
 - `sudo /etc/init.d/postgresql start`
 - `yarn start:dev`
+
+## setup
+
+```bash
+$  heroku config:add TZ=Asia/Tokyo --app poll-discord-app
+```
