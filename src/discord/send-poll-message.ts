@@ -294,8 +294,7 @@ export const sendMessageMain = async (
 
   if (messageFilled.content.startsWith(`${triggerCommand.rp30d} `)) {
     const res = convertRp30dArgToRpArgs(
-      removeCommandPrefix(messageFilled.content, triggerCommand.rp30d),
-      messageFilled.createdTimestamp
+      removeCommandPrefix(messageFilled.content, triggerCommand.rp30d)
     );
 
     if (Result.isErr(res)) return res;
@@ -312,8 +311,7 @@ export const sendMessageMain = async (
 
   if (messageFilled.content.startsWith(`${triggerCommand.rp60d} `)) {
     const res = convertRp60dArgToRpArgs(
-      removeCommandPrefix(messageFilled.content, triggerCommand.rp60d),
-      messageFilled.createdTimestamp
+      removeCommandPrefix(messageFilled.content, triggerCommand.rp60d)
     );
 
     if (Result.isErr(res)) return res;
