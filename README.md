@@ -71,4 +71,6 @@ result
 
 ```bash
 $  heroku config:add TZ=Asia/Tokyo --app poll-discord-app
+$  heroku config:add DATABASE_URL=*** --app poll-discord-app
+$  heroku config:add DISCORD_TOKEN=*** --app poll-discord-app
 ```
