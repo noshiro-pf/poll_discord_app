@@ -10,6 +10,7 @@
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint --fix src --ext .ts",
     "clean": "rimraf dist",
+    "clean:all":"git clean -xfd",
     "fmt": "prettier --ignore-path .prettierignore  --write .",
     "setup": "yarn setup:dbjson && yarn setup:eslintrc",
     "setup:eslintrc": "tsc -p ./eslintrc/tsconfig.eslintrc.json",
