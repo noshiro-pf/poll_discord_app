@@ -39,8 +39,15 @@ export const initDiscordClient = (): Promise<Result<DiscordClient, unknown>> =>
               resolve(Result.err(err));
             });
         });
+      }).then((result) => {
+        console.log('DiscordClient initialization: ready.');
+        return result;
       }),
-      promiseToResult(discordClient.login(DISCORD_TOKEN)),
+      promiseToResult(discordClient.login(DISCORD_TOKEN)).then((result) => {
+        console.log('DiscordClient initialization: logged in successfully.');
+        return result;
+      }),
+      ,
     ])
       .then(([ready, login]) => {
         console.log('DiscordClient initialization completed.');
