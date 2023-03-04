@@ -10,6 +10,8 @@ import { updatePollTitle } from './update-poll-title';
 
 export const initDiscordClient = (): Promise<Result<DiscordClient, unknown>> =>
   new Promise((resolveAll) => {
+    console.log('Initializing DiscordClient...');
+
     const discordClient = new DiscordClient({
       partials: ['MESSAGE', 'CHANNEL', 'REACTION'],
     });
@@ -41,6 +43,7 @@ export const initDiscordClient = (): Promise<Result<DiscordClient, unknown>> =>
       promiseToResult(discordClient.login(DISCORD_TOKEN)),
     ])
       .then(([ready, login]) => {
+        console.log('DiscordClient initialization completed.');
         if (Result.isErr(ready)) {
           resolveAll(Result.err(ready));
         } else {

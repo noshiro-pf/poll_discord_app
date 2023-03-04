@@ -15,12 +15,15 @@ export namespace psql {
   export const initClient = async (
     connectionString: string | undefined
   ): Promise<Result<PsqlClient, unknown>> => {
+    console.log('Initializing PostgreSQL client...');
     const psqlClient = new PsqlClient({
       connectionString: connectionString,
       ssl: true,
     });
 
     const res = await promiseToResult(psqlClient.connect());
+
+    console.log('PostgreSQL client initialization completed.');
 
     return Result.isOk(res) ? Result.ok(psqlClient) : Result.err(res.value);
   };
