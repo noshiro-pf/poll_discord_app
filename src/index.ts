@@ -15,12 +15,14 @@ import { defaultDatabase } from './types/database';
 import type { DatabaseRef } from './types/types';
 
 const main = async (): Promise<Result<unknown, unknown>> => {
+  console.log('Starting...');
   psql.setTlsRejectUnauthorized0();
 
   const databaseRef: DatabaseRef = {
     db: defaultDatabase,
   };
 
+  console.log('Initializing PostgreSQL client and DiscordClient...');
   const [psqlClientResult, discordClientResult] = await Promise.all([
     psql.initClient(isDev ? undefined : DATABASE_URL),
     initDiscordClient(),
